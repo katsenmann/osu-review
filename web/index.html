@@ -1237,7 +1237,7 @@ function render(p){
       .catch(e=>{ const n=$("#ppN"); if(n) n.innerHTML=`<small>–</small>`; }); }
 }
 
-function hiDPI(cv){ const r=cv.getBoundingClientRect(); const d=devicePixelRatio||1; cv.width=r.width*d; cv.height=cv.getAttribute("height")*d; cv.style.height=cv.getAttribute("height")+"px"; const g=cv.getContext("2d"); g.setTransform(d,0,0,d,0,0); return [g,r.width,+cv.getAttribute("height")]; }
+function hiDPI(cv){ const r0=cv.getBoundingClientRect(), r={width:cv.clientWidth||r0.width}; const d=devicePixelRatio||1; cv._cssW=Math.round(r.width); if(window._chartRO&&!cv._ro){ cv._ro=1; try{ window._chartRO.observe(cv); }catch(_){} } cv.width=r.width*d; cv.height=cv.getAttribute("height")*d; cv.style.height=cv.getAttribute("height")+"px"; const g=cv.getContext("2d"); g.setTransform(d,0,0,d,0,0); return [g,r.width,+cv.getAttribute("height")]; }
 
 function shape(g,x,y,kind,col,sz=3.5){
   g.fillStyle=col; g.strokeStyle=col; g.lineWidth=2; g.beginPath();
@@ -1249,9 +1249,11 @@ function shape(g,x,y,kind,col,sz=3.5){
 }
 
 /* timeline: hit error over time */
+// one time range for everything that is drawn along the replay (timeline, seek bar, stream/jump charts)
+function playLen(p){ const F=p.frames||[]; return Math.max((p.beatmap&&p.beatmap.length)||1, F.length?F[F.length-1][0]:0); }
 function drawTimeline(p,id="tl"){
   const cv=$("#"+id); if(!cv||!cv.getBoundingClientRect().width) return; const [g,W,H]=hiDPI(cv);
-  const a=p.analysis, w=a.windows, objs=a.objects, len=p.beatmap.length||1;
+  const a=p.analysis, w=a.windows, objs=a.objects, len=playLen(p);
   const L=40,R=10,T_=10,B=22, pw=W-L-R, ph=H-T_-B;
   cv._geo={L,pw,len,T_,ph};
   const X=t=>L+t/len*pw, Y=e=>T_+ph/2+Math.max(-1,Math.min(1,e/w.w50))*ph/2;
@@ -1570,7 +1572,7 @@ function setupViewer(p){
   // cursor smoke: every replay frame with the smoke key (16) held
   const SMOKE=[]; for(const f of (F||[])) if(f[3]&16) SMOKE.push(f);
   const RATE=a.rate||1;   // DT/NC = 1.5, HT = 0.75: replay + song run at this speed
-  const R=a.radius, pre=a.preempt, fadeIn=400*Math.min(1,pre/450), len=Math.max(bm.length,F.length?F[F.length-1][0]:0);
+  const R=a.radius, pre=a.preempt, fadeIn=400*Math.min(1,pre/450), len=playLen(p);
   const misses=objs.filter(o=>o.r.res==="miss").map(o=>o.t);
   let TL=buildTimeline(p, PP_CACHE[p.id]&&PP_CACHE[p.id].grad);
   VW.setGrad=gr=>{ TL=buildTimeline(p,gr); draw(); };
@@ -2111,7 +2113,7 @@ function setupTabStats(p){
   $("#tsLeg").innerHTML=`<span class="lg"><span style="color:#ff9fcb">■</span>${T("tsLegHeat")}</span><span class="lg"><span style="color:#8fdc4a">●</span>100</span><span class="lg"><span style="color:#ffc23d">●</span>50</span><span class="lg"><span style="color:#ff4d6d">✕</span>${T("miss")}</span><span class="lg"><span style="color:#5cc8ff">┅</span>${T("tsLegPf")}</span><span class="lg"><span style="color:#fff">●</span>${T("tsLegPen")}</span>`;
   // live pen, synced with the replay
   const pc=$("#tsp"); if(pc){ pc.style.display=""; clearInterval(setupTabStats.iv); let lastT=null;
-    setupTabStats.iv=setInterval(()=>{ if(!document.body.contains(pc)){ clearInterval(setupTabStats.iv); return; } if(VW.t===lastT) return; lastT=VW.t;
+    clearInterval(setupTabStats.iv); setupTabStats.iv=setInterval(()=>{ if(!document.body.contains(pc)){ clearInterval(setupTabStats.iv); return; } if(VW.t===lastT) return; lastT=VW.t;
       const r=pc.getBoundingClientRect(), d=devicePixelRatio||1; if(pc.width!==Math.round(r.width*d)){ pc.width=Math.round(r.width*d); pc.height=Math.round(r.height*d); }
       const pg=pc.getContext("2d"); pg.setTransform(d,0,0,d,0,0); pg.clearRect(0,0,r.width,r.height);
       let i=0,lo=0,hi=F.length-1; while(lo<=hi){ const m=(lo+hi)>>1; if(F[m][0]<=VW.t){ i=m; lo=m+1; } else hi=m-1; }
@@ -2198,7 +2200,7 @@ function patternCardsHTML(p){
 }
 
 function setupPatterns(p){
-  const P=p.patterns||{}, s=P.streams, j=P.jumps, len=(p.beatmap&&p.beatmap.length)||1, tip=$("#tip");
+  const P=p.patterns||{}, s=P.streams, j=P.jumps, len=playLen(p), tip=$("#tip");
   document.querySelectorAll(".prow").forEach(b=>b.onclick=()=>seekWatch(+b.dataset.t));
   const axis=(g,W,H,L,pw)=>{ g.fillStyle="#7c7c8a"; g.font="10.5px Segoe UI"; g.textAlign="center"; const stp=[5000,10000,15000,30000,60000].find(v=>len/v<=10)||120000; for(let t=0;t<=len;t+=stp) g.fillText(fmtT(t).slice(0,-4),L+t/len*pw,H-3); };
   if(s&&$("#stMap")){ const cv=$("#stMap"), [g,W,H]=hiDPI(cv), L=10,pw=W-20,ph=H-20, mx=Math.max(...s.list.map(x=>x.n));
@@ -2475,6 +2477,17 @@ document.addEventListener("click",e=>{ if(e.target&&e.target.id==="updCheck"){ e
   window.addEventListener("error",e=>{ if(/ResizeObserver loop/.test(e.message||"")) return; send(`JS error: ${e.message} @ ${(e.filename||"").split("/").pop().split("#")[0]}:${e.lineno}`); });
   window.addEventListener("unhandledrejection",e=>send(`JS promise: ${(e.reason&&(e.reason.stack||e.reason.message))||e.reason}`));
   setInterval(()=>{ const m=performance.memory; if(m&&m.usedJSHeapSize>1.2e9) send(`memory high: ${Math.round(m.usedJSHeapSize/1e6)} MB`); },60000); })();
+
+
+/* ================================================================ redraw score charts when their width changes
+   (window size, Big/Windowed/Fullscreen, sidebar) - otherwise the browser stretches the old drawing */
+(()=>{ let tm=null;
+  const stale=()=>[...document.querySelectorAll("#view canvas.chart, #tl, #tl2, #hist, #tsc")].some(c=>c._cssW!=null&&c.offsetParent&&Math.abs(c.clientWidth-c._cssW)>1);
+  const redo=()=>{ if(VIEW!=="scores"||!cur||!cur.analysis||!stale()) return;
+    try{ drawTimeline(cur); drawTimeline(cur,"tl2"); drawHist(cur); drawAim(cur); }catch(e){}
+    try{ setupTabStats(cur); }catch(e){} try{ setupPatterns(cur); }catch(e){} try{ updatePlayheads(VW.t); }catch(e){} };
+  const ro=new ResizeObserver(()=>{ clearTimeout(tm); tm=setTimeout(redo,120); });
+  window._chartRO=ro; })();
 
 /* ================================================================ tablet page */
 /* ---- motion helpers */
