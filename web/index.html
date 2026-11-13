@@ -183,6 +183,13 @@ canvas.chart{width:100%;display:block}
 body.theater-on .main{overflow:hidden}
 .card:fullscreen{padding:10px 16px 12px}
 .uptoast{position:fixed;right:18px;bottom:18px;z-index:60;background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 53%,transparent);border-radius:14px;padding:12px 14px;max-width:340px;box-shadow:0 10px 40px #0008;font-size:13px;display:none}
+.updbar{position:fixed;right:18px;bottom:18px;z-index:61;width:360px;max-width:calc(100vw - 36px);background:var(--panel-solid,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:16px;padding:14px 16px;box-shadow:0 14px 50px #000a;font-size:13px;display:none;animation:updIn .35s var(--ease,ease)}
+@keyframes updIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.updbar h5{margin:0 0 2px;font-size:14.5px;display:flex;align-items:center;gap:8px}.updbar h5 i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.updbar .uv{color:var(--ink2);font-size:12px}.updbar pre{margin:8px 0 0;max-height:120px;overflow:auto;white-space:pre-wrap;font-family:inherit;font-size:12px;line-height:1.45;color:var(--ink2)}
+.updbar .ub{display:flex;gap:8px;margin-top:12px;align-items:center}.updbar .ub .sp{flex:1}.updbar .ue{color:#ff8097;margin-top:8px;font-size:12px}
+.updbar a{color:var(--ink3);font-size:12px;cursor:pointer;text-decoration:underline}
+#ver.new{color:var(--accent);cursor:pointer}#ver.new::after{content:" ●"}
 .uptoast b{color:var(--accent)}
 .uptoast ul{margin:6px 0 0;padding-left:18px;color:var(--ink2)}
 .ver{color:var(--ink3);font-size:10px;margin-top:2px}
@@ -673,6 +680,7 @@ body.lockmini .sidetog{display:none}
 <div class="cmdk" id="cmdk"><div class="box"><input id="cmdIn" autocomplete="off" spellcheck="false"><div class="res" id="cmdRes"></div><div class="ft" id="cmdFt"></div></div></div>
 <div class="themer" id="themer"></div>
 <div class="uptoast" id="uptoast"></div>
+<div class="updbar" id="updbar"></div>
 <div class="rjob" id="rjob"></div>
 <div class="modal" id="rmodal"><div class="dlg" id="rdlg"></div></div>
 
@@ -698,6 +706,7 @@ body.lockmini .sidetog{display:none}
       <div class="sh"><h3 data-i18n="secGen"></h3><p data-i18n="secGenD"></p></div>
       <div class="srow"><div class="sl"><b data-i18n="onNew"></b><small data-i18n="onNewD"></small></div><select id="s_popup"><option value="app" data-i18n="popApp"></option><option value="browser" data-i18n="popBrowser"></option><option value="off" data-i18n="popOff"></option></select></div>
       <label class="srow"><div class="sl"><b data-i18n="toFront"></b><small data-i18n="toFrontD"></small></div><span class="sw"><input type="checkbox" id="s_bring_to_front"><i></i></span></label>
+      <div class="srow"><div class="sl"><b>Updates</b><small id="updInfo">–</small></div><button class="btn small" id="updCheck">Check now</button></div>
       <div class="srow"><div class="sl"><b data-i18n="sDesign"></b><small data-i18n="sDesignD"></small></div><button class="btn small" id="sTheme2" data-i18n="cmdTheme"></button></div>
     </section>
     <section class="ssec" data-sec="osu">
@@ -2432,6 +2441,33 @@ function sceneChange(btn, go){
     }
   })().catch(e=>{ console.error(e); if(VIEW!==go) showView(go); }).finally(done);
 }
+
+
+/* ================================================================ updates from GitHub */
+let UPD=null;
+function updNotes(t){ return esc((t||"").replace(/\r/g,"").replace(/^#+\s*/gm,"").replace(/\*\*|`/g,"").trim()); }
+function updRender(force){
+  const el=$("#updbar"), v=$("#ver"); if(!UPD) return;
+  const info=$("#updInfo"); if(info) info.textContent=UPD.error&&!UPD.latest?`Installed: v${UPD.current} · couldn't reach GitHub`:UPD.available?`Installed: v${UPD.current} · v${UPD.latest} is available`:`Installed: v${UPD.current} · up to date`;
+  v.classList.toggle("new",!!UPD.available); v.title=UPD.available?`Update available: v${UPD.latest}`:""; v.onclick=UPD.available?()=>updRender(true):null;
+  if(!UPD.available){ el.style.display="none"; return; }
+  let snooze=null; try{ snooze=JSON.parse(localStorage.getItem("osr_upd_later")||"null"); }catch(_){}
+  if(!force&&snooze&&snooze.v===UPD.latest&&Date.now()-snooze.t<24*3600e3) return;
+  if(!force&&el.style.display==="block") return;
+  el.innerHTML=`<h5><i></i>Update available</h5><div class="uv">v${esc(UPD.current)} → <b style="color:var(--ink)">v${esc(UPD.latest)}</b></div>
+    ${UPD.notes?`<pre>${updNotes(UPD.notes)}</pre>`:""}<div class="ue" id="updErr"></div>
+    <div class="ub">${UPD.can_apply?`<button class="btn small primary" id="updGo">Update now</button>`:""}<button class="btn small" id="updLater">Later</button><span class="sp"></span><a id="updPage">Release page</a></div>`;
+  el.style.display="block";
+  $("#updLater").onclick=()=>{ try{ localStorage.setItem("osr_upd_later",JSON.stringify({v:UPD.latest,t:Date.now()})); }catch(_){} el.style.display="none"; };
+  $("#updPage").onclick=()=>api("/api/update/page",{method:"POST"});
+  const go=$("#updGo"); if(go) go.onclick=async()=>{ go.disabled=true; $("#updLater").disabled=true; go.textContent="Updating …"; $("#updErr").textContent="";
+    try{ const r=await api("/api/update/apply",{method:"POST"}); if(r.ok){ go.textContent="Restarting …"; try{ localStorage.removeItem("osr_upd_later"); }catch(_){} }
+      else{ $("#updErr").textContent=r.message||"Update failed."; go.disabled=false; $("#updLater").disabled=false; go.textContent="Try again"; } }
+    catch(e){ go.textContent="Restarting …"; } };
+}
+async function updLoad(check){ try{ UPD=await api(check?"/api/update/check":"/api/update",check?{method:"POST"}:undefined); updRender(false); }catch(_){} }
+setTimeout(()=>updLoad(false),4000); setTimeout(()=>updLoad(false),25000); setInterval(()=>updLoad(false),30*60e3);
+document.addEventListener("click",e=>{ if(e.target&&e.target.id==="updCheck"){ e.target.disabled=true; e.target.textContent="Checking …"; updLoad(true).then(()=>{ e.target.disabled=false; e.target.textContent="Check now"; if(UPD&&UPD.available) updRender(true); }); } });
 
 /* ================================================================ tablet page */
 /* ---- motion helpers */
