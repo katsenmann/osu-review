@@ -1,7 +1,7 @@
 name: Build installer
 
-# Builds osu-review-Setup-<version>.exe on a Windows machine at GitHub.
-# - When a release is published: the setup is attached to that release.
+# Builds osu-review-Setup.exe and osu-review-<version>.zip on a Windows machine at GitHub.
+# - When a release is published: both are attached to that release.
 # - By hand (Actions tab -> Build installer -> Run workflow): builds the branch it is run on
 #   and attaches the setup to the given release if "attach" is ticked, otherwise it is only
 #   kept as a download on the run page.
@@ -48,12 +48,18 @@ jobs:
           if (-not $ok) { throw "osu!review did not start" }
           Write-Host "server answered, version $($r.current)"
 
+      - name: ZIP (manual install and the built-in updater)
+        shell: pwsh
+        run: python installer/make-zip.py
+
       - uses: actions/upload-artifact@v4
         with:
-          name: osu-review-Setup-${{ env.VERSION }}
-          path: dist/*.exe
+          name: osu-review-${{ env.VERSION }}
+          path: |
+            dist/*.exe
+            dist/*.zip
 
       - name: Attach to the release
         if: github.event_name == 'release' || inputs.attach
         shell: pwsh
-        run: gh release upload $env:TAG (Get-ChildItem dist\*.exe).FullName --clobber
+        run: gh release upload $env:TAG (Get-ChildItem dist\*.exe).FullName $env:ZIP --clobber
