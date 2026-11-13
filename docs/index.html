@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>osu!review – replay analysis right after every score</title>
+<meta name="description" content="osu!review analyses every osu! score the moment you finish it: misses with reasons, hit error, aim, streams and jumps, your tablet area – plus a studio to render replays as video.">
+<meta property="og:title" content="osu!review">
+<meta property="og:description" content="Replay analysis right after every score – misses, aim, streams & jumps, tablet area, video rendering.">
+<meta property="og:image" content="img/home.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='18' fill='%23bf4d80' stroke='white' stroke-width='3.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0d14;--panel:#17141f;--line:#ffffff14;--ink:#f1edf8;--ink2:#b3adc4;--ink3:#7c7690;--pink:#ff66ab;--violet:#8866ff;--cyan:#5cc8ff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:#0f0d14cc;border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:22px;height:62px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;text-decoration:none}
+.logo b{color:var(--pink)}
+nav .links{margin-left:auto;display:flex;gap:22px;font-size:14px;color:var(--ink2)}
+nav .links a{text-decoration:none}nav .links a:hover{color:var(--ink)}
+.hero{position:relative;overflow:hidden;padding:110px 0 80px}
+.hero::before{content:"";position:absolute;inset:-30% -10% auto auto;width:900px;height:900px;background:radial-gradient(closest-side,#ff66ab30,transparent 70%);filter:blur(10px)}
+.hero::after{content:"";position:absolute;left:-200px;bottom:-300px;width:700px;height:700px;background:radial-gradient(closest-side,#8866ff28,transparent 70%)}
+.hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
+.tag{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--ink2);background:#ffffff0a;border:1px solid var(--line);padding:5px 12px;border-radius:99px}
+.tag i{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 10px #4ade80}
+h1{font-size:clamp(40px,6vw,68px);line-height:1.04;letter-spacing:-.03em;margin:18px 0 18px;font-weight:800}
+h1 span{background:linear-gradient(90deg,var(--pink),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:19px;color:var(--ink2);max-width:560px;margin:0 0 30px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:12px;font-weight:600;text-decoration:none;font-size:15.5px;transition:transform .2s,box-shadow .2s,background .2s}
+.btn.main{background:linear-gradient(135deg,var(--pink),#d94d8f);color:#fff;box-shadow:0 10px 30px -8px #ff66ab90}
+.btn.main:hover{transform:translateY(-2px);box-shadow:0 16px 40px -10px #ff66abb0}
+.btn.sec{border:1px solid var(--line);background:#ffffff08}.btn.sec:hover{background:#ffffff12}
+.small{font-size:13px;color:var(--ink3);margin-top:14px}
+.circle{position:relative;width:min(380px,80vw);aspect-ratio:1;margin:auto}
+.circle svg{width:100%;height:100%;overflow:visible}
+.appr{transform-origin:50% 50%;animation:appr 1.6s cubic-bezier(.5,0,.75,1) infinite}
+@keyframes appr{0%{transform:scale(1.9);opacity:0}20%{opacity:1}88%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0}}
+.hc{transform-origin:50% 50%;animation:hit 1.6s infinite}
+@keyframes hit{0%,86%{transform:scale(1);opacity:1}94%{transform:scale(1.35);opacity:.0}100%{transform:scale(1);opacity:0}}
+.j300{opacity:0;animation:j3 1.6s infinite}
+@keyframes j3{0%,86%{opacity:0;transform:translateY(0)}90%{opacity:1}100%{opacity:0;transform:translateY(-26px)}}
+section{padding:90px 0}
+h2{font-size:clamp(28px,3.6vw,40px);letter-spacing:-.02em;margin:0 0 12px;font-weight:800}
+.sub{color:var(--ink2);max-width:640px;margin:0 0 40px;font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.f{background:linear-gradient(180deg,#ffffff08,#ffffff03);border:1px solid var(--line);border-radius:18px;padding:24px;transition:border-color .25s,transform .25s}
+.f:hover{border-color:#ff66ab55;transform:translateY(-3px)}
+.f .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:#ff66ab18;margin-bottom:14px}
+.f h3{margin:0 0 6px;font-size:17px}.f p{margin:0;color:var(--ink2);font-size:14.5px}
+.shot{border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000;background:var(--panel)}
+.shot img{display:block;width:100%;height:auto}
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gallery .wide{grid-column:span 2}
+.cap{font-size:13.5px;color:var(--ink3);margin:8px 2px 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
+.st{border:1px solid var(--line);border-radius:18px;padding:24px;position:relative;background:#ffffff05}
+.st::before{counter-increment:s;content:counter(s);position:absolute;top:-14px;left:20px;width:30px;height:30px;border-radius:50%;background:var(--pink);color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+.st h3{margin:6px 0 6px;font-size:16.5px}.st p{margin:0;color:var(--ink2);font-size:14.5px}
+code{background:#ffffff12;padding:2px 7px;border-radius:6px;font-size:.92em}
+.req{margin-top:26px;color:var(--ink2);font-size:14.5px}
+.pp{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.pp span{font-size:13px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);color:var(--ink2)}
+footer{border-top:1px solid var(--line);padding:36px 0 50px;color:var(--ink3);font-size:14px}
+footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}footer .r{margin-left:auto}
+.fin{text-align:center;padding:80px 0;background:radial-gradient(600px 260px at 50% 100%,#ff66ab22,transparent)}
+.fin h2{margin-bottom:8px}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr}.circle{width:240px}.grid,.steps{grid-template-columns:1fr}.gallery{grid-template-columns:1fr}.gallery .wide{grid-column:auto}nav .links{display:none}}
+@media (prefers-reduced-motion:reduce){.appr,.hc,.j300{animation:none}}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}.reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#"><svg width="26" height="26" viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="#bf4d80" stroke="#fff" stroke-width="3.5"/></svg><span>osu<b>!</b>review</span></a>
+  <div class="links"><a href="#features">Features</a><a href="#screens">Screenshots</a><a href="#install">Install</a><a href="https://github.com/katsenmann/osu-review">GitHub</a></div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div>
+    <span class="tag"><i></i>Free · Windows · stable & lazer</span>
+    <h1>Know <span>why</span> you missed.</h1>
+    <p class="lead">osu!review analyses every score the moment you finish it – misses with reasons, hit error, aim, streams and jumps, your tablet area – and renders your replays as video.</p>
+    <div class="cta">
+      <a class="btn main" href="https://github.com/katsenmann/osu-review/releases/latest">⬇ Download for Windows</a>
+      <a class="btn sec" href="https://github.com/katsenmann/osu-review">View on GitHub</a>
+    </div>
+    <div class="small" id="ver">Unzip, run Install.bat, play.</div>
+  </div>
+  <div class="circle" aria-hidden="true">
+    <svg viewBox="0 0 200 200">
+      <circle class="appr" cx="100" cy="100" r="62" fill="none" stroke="#ff66ab" stroke-width="5"/>
+      <g class="hc"><circle cx="100" cy="100" r="58" fill="#bf4d80"/><circle cx="100" cy="100" r="58" fill="none" stroke="#fff" stroke-width="9"/>
+      <text x="100" y="121" text-anchor="middle" font-size="58" font-weight="800" fill="#fff" font-family="Inter,sans-serif">1</text></g>
+      <text class="j300" x="100" y="52" text-anchor="middle" font-size="30" font-weight="800" fill="#8fd8ff" font-family="Inter,sans-serif">300</text>
+    </svg>
+  </div>
+</div></header>
+
+<section id="features"><div class="wrap">
+  <h2 class="reveal">Everything about your play, right after you play it</h2>
+  <p class="sub reveal">It runs in the background and opens on its own when you finish a map. No uploading, no waiting – everything stays on your PC.</p>
+  <div class="grid">
+    <div class="f reveal"><div class="ic">🎯</div><h3>Miss analyzer</h3><p>Every miss and slider break with the reason – clicked off target, note lock, too early or late, slider end – replayed with osu!'s own rules.</p></div>
+    <div class="f reveal"><div class="ic">▶️</div><h3>Replay viewer</h3><p>Your skin, the song and hitsounds, frame by frame, aim lens, cursor path, and a switch to turn Hidden off.</p></div>
+    <div class="f reveal"><div class="ic">🖥️</div><h3>Live side panels</h3><p>In the big view: what's happening now, aim on your last jumps, cursor speed, your pen on the tablet, hit timing and keys.</p></div>
+    <div class="f reveal"><div class="ic">🌊</div><h3>Streams & jumps</h3><p>Stamina curve, timing drift, alternation, over/undershoot by distance and direction – and your stream and jump limits.</p></div>
+    <div class="f reveal"><div class="ic">✏️</div><h3>Tablet & area</h3><p>Your OpenTabletDriver area live, report rate, and an overall rating of your area from all your replays.</p></div>
+    <div class="f reveal"><div class="ic">🎬</div><h3>Studio</h3><p>Render replays to video with danser-go – HUD with pp counter and key overlay, motion blur, up to 4K.</p></div>
+  </div>
+  <div class="pp reveal"><span>pp from the osu! API, tosu or osu!lazer's own calculator</span><span>Themes & map backgrounds</span><span>Ctrl+K command bar</span><span>Relax, Hidden, DT, failed scores</span></div>
+</div></section>
+
+<section id="screens" style="padding-top:20px"><div class="wrap">
+  <h2 class="reveal">Have a look</h2>
+  <p class="sub reveal">Real scores, real analysis.</p>
+  <div class="gallery">
+    <div class="wide reveal"><div class="shot"><img src="img/home.jpg" alt="Home screen with form, limits and recent scores" loading="lazy"></div><p class="cap">Home – your form, your limits, today's session and what to work on.</p></div>
+    <div class="reveal"><div class="shot"><img src="img/analysis.jpg" alt="Score analysis with timeline" loading="lazy"></div><p class="cap">Every hit on a timeline, every miss explained.</p></div>
+    <div class="reveal"><div class="shot"><img src="img/replay.jpg" alt="Big replay view with live side panels" loading="lazy"></div><p class="cap">Big replay view with live aim, tablet, timing and keys.</p></div>
+    <div class="wide reveal"><div class="shot"><img src="img/streams.jpg" alt="Streams and jumps analysis" loading="lazy"></div><p class="cap">Streams and jumps – where your limits are.</p></div>
+  </div>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <h2 class="reveal">Install in a minute</h2>
+  <p class="sub reveal">No installer wizard, no account.</p>
+  <div class="steps">
+    <div class="st reveal"><h3>Download & unzip</h3><p>Get the ZIP from <a href="https://github.com/katsenmann/osu-review/releases/latest">Releases</a> and unzip it somewhere it can stay, e.g. <code>Documents\osu-review</code>.</p></div>
+    <div class="st reveal"><h3>Run Install.bat</h3><p>Creates a desktop shortcut and, if you like, autostart. Python is fetched automatically if you don't have it.</p></div>
+    <div class="st reveal"><h3>Play</h3><p>Start osu!review and play osu! as usual – the analysis opens after every score.</p></div>
+  </div>
+  <p class="req reveal"><b>Needs:</b> Windows 10/11 and osu!stable or osu!lazer. <b>Optional:</b> <a href="https://opentabletdriver.net/">OpenTabletDriver</a> for tablet stats, <a href="https://github.com/tosuapp/tosu">tosu</a>.<br>
+  <b>Updating:</b> run <code>Uninstall.bat</code> in the old folder, pick 1 (keeps your scores), then install the new version.</p>
+</div></section>
+
+<div class="fin"><div class="wrap">
+  <h2 class="reveal">Stop guessing. Start reviewing.</h2>
+  <p class="sub reveal" style="margin:0 auto 26px">Free, runs on your PC.</p>
+  <a class="btn main reveal" href="https://github.com/katsenmann/osu-review/releases/latest">⬇ Download osu!review</a>
+</div></div>
+
+<footer><div class="wrap">
+  <span>Made by Katsenmann x Claude</span>
+  <span>Not affiliated with ppy or osu!.</span>
+  <span class="r">Thanks to danser-go, rosu-pp, tosu, OpenTabletDriver.</span>
+</div></footer>
+
+<script>
+const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } }),{threshold:.12});
+document.querySelectorAll(".reveal").forEach((el,i)=>{ el.style.transitionDelay=(i%3)*80+"ms"; io.observe(el); });
+fetch("https://api.github.com/repos/katsenmann/osu-review/releases/latest").then(r=>r.ok?r.json():null).then(j=>{ if(j&&j.tag_name) document.getElementById("ver").textContent="Latest: "+j.tag_name+" · unzip, run Install.bat, play."; }).catch(()=>{});
+</script>
+</body>
+</html>
