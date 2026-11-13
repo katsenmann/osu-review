@@ -136,10 +136,25 @@ class Shell:
 
     def _watch(self, proc):
         t0 = time.time()
+        self.user_closed = False
         code = proc.wait()
         if self.proc is proc:
             self.proc = None
-        if code not in (0, None) and time.time() - t0 < 15:
+        ran = time.time() - t0
+        if self.user_closed or self.quit or code == 0:
+            if ran >= 15:
+                self.log(f"App window closed (ran {ran / 60:.1f} min)")
+        else:
+            # the window went away without being closed: a crash (WebView2 / .NET / Python)
+            self.log(f"App window crashed: exit code {code} ({self._code_name(code)}) after {ran / 60:.1f} min – details in window.log")
+            now = time.time()
+            self.crashes = [t for t in getattr(self, "crashes", []) if now - t < 600] + [now]
+            if ran >= 15 and len(self.crashes) <= 3:
+                self.log("App window: reopening after the crash")
+                threading.Timer(1.5, lambda: self.open("")).start()
+            elif ran >= 15:
+                self.log("App window: crashed 3 times in 10 minutes – not reopening automatically")
+        if code not in (0, None) and ran < 15:
             self.fail_count += 1
             why = "the Windows WebView2 runtime is missing" if code == 4 else f"Code {code}, details in window.log"
             self.log(f"App window does not start ({why}) – using the Edge/Chrome window")
@@ -158,7 +173,18 @@ class Shell:
             self.pending = None
         return out
 
+    @staticmethod
+    def _code_name(code):
+        if code is None:
+            return "unknown"
+        c = code & 0xFFFFFFFF
+        names = {0xC0000005: "access violation", 0xC0000409: "stack buffer overrun / fail-fast", 0xC00000FD: "stack overflow",
+                 0xE0434352: ".NET exception", 0xC0000374: "heap corruption", 0x80000003: "breakpoint", 0xC0000017: "out of memory",
+                 1: "Python error", 3: "Python error (see window.log)", 4: "WebView2 missing"}
+        return names.get(c, hex(c) if c > 255 else str(code))
+
     def closed(self):
+        self.user_closed = True
         self.last_poll = 0.0
         self.proc = None
 
