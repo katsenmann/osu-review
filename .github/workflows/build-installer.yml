@@ -1,0 +1,59 @@
+name: Build installer
+
+# Builds osu-review-Setup-<version>.exe on a Windows machine at GitHub.
+# - When a release is published: the setup is attached to that release.
+# - By hand (Actions tab -> Build installer -> Run workflow): builds the branch it is run on
+#   and attaches the setup to the given release if "attach" is ticked, otherwise it is only
+#   kept as a download on the run page.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release to attach the setup to (e.g. v1.0.0-beta.3)"
+        required: true
+      attach:
+        description: "Attach the setup to that release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Build program folder with its own Python, then the setup
+        shell: pwsh
+        run: ./installer/build-setup.ps1
+
+      - name: Smoke test (server starts and answers)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "build\osu-review\python\python.exe" -ArgumentList "build\osu-review\app.py","--no-window" -PassThru -WindowStyle Hidden
+          $ok = $false
+          foreach ($i in 1..30) { Start-Sleep 1; try { $r = Invoke-RestMethod http://127.0.0.1:47290/api/update -TimeoutSec 2; if ($r.current) { $ok = $true; break } } catch {} }
+          try { Invoke-WebRequest -UseBasicParsing -Method Post http://127.0.0.1:47290/api/quit | Out-Null } catch {}
+          Start-Sleep 2; if (-not $p.HasExited) { Stop-Process $p -Force }
+          if (-not $ok) { throw "osu!review did not start" }
+          Write-Host "server answered, version $($r.current)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osu-review-Setup-${{ env.VERSION }}
+          path: dist/*.exe
+
+      - name: Attach to the release
+        if: github.event_name == 'release' || inputs.attach
+        shell: pwsh
+        run: gh release upload $env:TAG (Get-ChildItem dist\*.exe).FullName --clobber
