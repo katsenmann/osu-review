@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data/
+diagnostics/
+python/
+runtime/
+*.osr
