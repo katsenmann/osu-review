@@ -1161,7 +1161,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass            # the window closed or reloaded while the answer was on its way
 
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
@@ -1434,6 +1437,13 @@ class Handler(BaseHTTPRequestHandler):
                     p = load_play(pid)
                     p["pp"] = json.loads(body or b"{}")
                     save_play(p)
+                return self._send(200, {"ok": True})
+            if path == "/api/clientlog/line":
+                try:
+                    msg = str(json.loads(body or b"{}").get("msg", ""))[:600]
+                except Exception:
+                    msg = "?"
+                log("window:", msg)
                 return self._send(200, {"ok": True})
             if path == "/api/clientlog":
                 diag("client_" + time.strftime("%H%M%S"), {"client": json.loads(body or b"{}")})

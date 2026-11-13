@@ -1,7 +1,10 @@
 {
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "changes": {
     "en": [
+      "Window crashes are now written to the log (exit code, WebView2 engine failures, JS errors) and the window reopens by itself after a crash",
+      "If only the page inside the window dies, it reloads instead of leaving a dead window",
+      "Tablet on this map: removed the “space left/right goes unused” advice – that depends on the map, not on your area. You still get a warning when your pen hits the edge of the area",
       "Updates: osu!review now checks GitHub for new versions and shows a notice with an “Update now” button – one click downloads and installs it, your scores and settings stay (Settings > General > Updates to check by hand)",
       "First public beta – version numbers start fresh at 1.0.0-beta.1 (this is the former 2.19.9)",
       "Failed scores: the objects the game still counts as misses while the fail plays out are now included, so the miss count matches the game (scores are re-analysed once)",

@@ -95,7 +95,53 @@ def has_webview2():
         return True
 
 
+def watch_webview(win):
+    """Logs WebView2 engine crashes and reloads the page when only the page process died."""
+    if os.name != "nt":
+        return
+    try:
+        core = win.native.browser.webview.CoreWebView2
+    except Exception as e:
+        log(f"crash watch unavailable: {e}")
+        return
+
+    def failed(sender, args):
+        try:
+            kind = str(args.ProcessFailedKind)
+        except Exception:
+            kind = "?"
+        extra = ""
+        for attr in ("Reason", "ExitCode", "ProcessDescription"):
+            try:
+                extra += f" {attr}={getattr(args, attr)}"
+            except Exception:
+                pass
+        log(f"WebView2 process failed: {kind}{extra}")
+        try:
+            api("/api/clientlog/line", {"msg": f"window engine: {kind}{extra}"}, timeout=1)
+        except Exception:
+            pass
+        if "Render" in kind or "Frame" in kind or "Gpu" in kind or "Utility" in kind:
+            try:
+                sender.Reload()
+                log("page reloaded after engine failure")
+            except Exception as e:
+                log(f"reload failed: {e}")
+
+    try:
+        core.ProcessFailed += failed
+        log("crash watch on")
+    except Exception as e:
+        log(f"crash watch failed: {e}")
+
+
 def main():
+    try:
+        import faulthandler
+        faulthandler.enable(open(os.path.join(data_dir(), "window.log"), "a", encoding="utf-8"))
+    except Exception:
+        pass
+    log(f"window start (pid {os.getpid()})")
     set_windows_identity()
     if not has_webview2():
         log("WebView2 runtime not installed")
@@ -143,6 +189,7 @@ def main():
 
     def on_shown():
         set_native_icon(win)
+        threading.Timer(2.0, lambda: watch_webview(win)).start()
         threading.Thread(target=poll, daemon=True).start()
 
     win.events.shown += on_shown
@@ -152,8 +199,9 @@ def main():
         webview.start(private_mode=False, storage_path=store, icon=ICON if os.name != "nt" else None)
     except TypeError:
         webview.start(private_mode=False, storage_path=store)
+    log("window closed by the user")
     try:
-        api("/api/shell/closed", {"pid": os.getpid()}, timeout=1)
+        api("/api/shell/closed", {"pid": os.getpid()}, timeout=3)
     except Exception:
         pass
     return 0
