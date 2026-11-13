@@ -37,6 +37,10 @@ class Shell:
     def _python(self):
         """Interpreter that can run window.py, or None."""
         if os.name == "nt":
+            # the installer ships its own Python with pywebview next to the program
+            own = os.path.join(self.here, "python", "pythonw.exe")
+            if os.path.isfile(own) and os.path.isdir(os.path.join(self.here, "python", "Lib", "site-packages", "webview")):
+                return own
             exe = os.path.join(self.rt, "py312", "pythonw.exe")
             ok = os.path.isfile(exe) and os.path.isdir(os.path.join(self.rt, "py312", "Lib", "site-packages", "webview"))
             return exe if ok else None

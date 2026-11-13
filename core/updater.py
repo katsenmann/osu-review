@@ -93,6 +93,13 @@ class Updater:
             self.check()
             if self.state["available"]:
                 self.log(f'update available: {self.state["latest"]} (installed {self.state["current"]})')
+                cb = getattr(self, "on_available", None)
+                if cb and getattr(self, "_told", None) != self.state["latest"]:
+                    self._told = self.state["latest"]
+                    try:
+                        cb(self.state["latest"])
+                    except Exception:
+                        pass
             time.sleep(CHECK_EVERY)
 
     # ------------------------------------------------------------ apply
