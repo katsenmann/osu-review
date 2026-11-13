@@ -39,6 +39,7 @@ from core.shell import Shell
 from core.osuapi import OsuApi
 from core.tosu import TosuBridge
 from core.lazercalc import LazerCalc, build_job
+from core.updater import Updater
 
 APP_NAME = "osu!review"
 PORT = 47290
@@ -1333,6 +1334,8 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/pp-lazer/"):
                 pid = os.path.basename(path.split("/")[3])
                 return self._send(200, lazer_pp(pid))
+            if path == "/api/update":
+                return self._send(200, S.updater.public())
             if path == "/api/lazercalc/status":
                 S.lazer.ensure_async()
                 return self._send(200, {"state": S.lazer.state, "error": S.lazer.error, "version": S.lazer.version()})
@@ -1536,6 +1539,14 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/shell/closed":
                 S.shell.closed()
                 return self._send(200, {"ok": True})
+            if path == "/api/update/check":
+                return self._send(200, S.updater.check())
+            if path == "/api/update/apply":
+                ok, msg = S.updater.apply()
+                return self._send(200, {"ok": ok, "message": msg})
+            if path == "/api/update/page":
+                webbrowser.open(S.updater.state.get("page") or "https://github.com/katsenmann/osu-review/releases/latest")
+                return self._send(200, {"ok": True})
             if path == "/api/quit":
                 self._send(200, {"ok": True})
                 S.shell.quit = True
@@ -1674,6 +1685,8 @@ def main():
     S.otd.dump_path = os.path.join(HERE, "diagnostics", "otd_raw.json")
     S.renderer = Renderer(DATA, log, diag_dir=os.path.join(HERE, "diagnostics"))
     S.rosu = RosuVendor(DATA, log)
+    S.updater = Updater(HERE, DATA, log, lambda: read_version().get("version") or "0")
+    threading.Thread(target=S.updater.loop, daemon=True).start()
     S.lazer = LazerCalc(DATA, log)
     S.lazer.ensure_async()
     threading.Thread(target=lazer_backfill, daemon=True).start()
