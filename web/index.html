@@ -2106,8 +2106,8 @@ function setupTabStats(p){
     g.textAlign="center"; g.fillText(`${Tp.toFixed(1)} mm`,ox+A.w*sc/2,oy+12); g.fillText(`${Bt.toFixed(1)} mm`,ox+A.w*sc/2,oy+A.h*sc-5);
     g.textAlign="left"; g.fillText(`${L.toFixed(1)}`,ox+4,oy+A.h*sc/2); g.textAlign="right"; g.fillText(`${Rr.toFixed(1)}`,ox+A.w*sc-4,oy+A.h*sc/2);
     const minS=Math.min(L,Rr,Tp,Bt), wide=Math.max(L,Rr,Tp,Bt);
-    kv.insertAdjacentHTML("afterbegin",`<div class="ins" style="grid-column:1/-1"><div class="k">${T("tsMargins")}</div><div class="d" style="font-size:12.5px;color:var(--ink)">${
-      minS<0.8?T("tsMarginEdge"):(L>A.w*0.12&&Rr>A.w*0.12)?T("tsMarginLR",{l:L.toFixed(1),r:Rr.toFixed(1)}):(Tp>A.h*0.12&&Bt>A.h*0.12)?T("tsMarginTB",{t:Tp.toFixed(1),b:Bt.toFixed(1)}):wide>A.w*0.12?T("tsMarginWide",{n:wide.toFixed(1),s:wide===L?T("tsSideL"):wide===Rr?T("tsSideR"):wide===Tp?T("tsSideT"):T("tsSideB")}):T("tsMarginOk")}</div></div>`); }
+    // per score only warn when the pen ran into the edge – unused space depends on the map, not on the area
+    if(minS<0.8) kv.insertAdjacentHTML("afterbegin",`<div class="ins" style="grid-column:1/-1"><div class="k">${T("tsMargins")}</div><div class="d" style="font-size:12.5px;color:var(--ink)">${T("tsMarginEdge")}</div></div>`); }
   $("#tsLeg").innerHTML=`<span class="lg"><span style="color:#ff9fcb">■</span>${T("tsLegHeat")}</span><span class="lg"><span style="color:#8fdc4a">●</span>100</span><span class="lg"><span style="color:#ffc23d">●</span>50</span><span class="lg"><span style="color:#ff4d6d">✕</span>${T("miss")}</span><span class="lg"><span style="color:#5cc8ff">┅</span>${T("tsLegPf")}</span><span class="lg"><span style="color:#fff">●</span>${T("tsLegPen")}</span>`;
   // live pen, synced with the replay
   const pc=$("#tsp"); if(pc){ pc.style.display=""; clearInterval(setupTabStats.iv); let lastT=null;
@@ -2468,6 +2468,13 @@ function updRender(force){
 async function updLoad(check){ try{ UPD=await api(check?"/api/update/check":"/api/update",check?{method:"POST"}:undefined); updRender(false); }catch(_){} }
 setTimeout(()=>updLoad(false),4000); setTimeout(()=>updLoad(false),25000); setInterval(()=>updLoad(false),30*60e3);
 document.addEventListener("click",e=>{ if(e.target&&e.target.id==="updCheck"){ e.target.disabled=true; e.target.textContent="Checking …"; updLoad(true).then(()=>{ e.target.disabled=false; e.target.textContent="Check now"; if(UPD&&UPD.available) updRender(true); }); } });
+
+
+/* ================================================================ JS errors -> log.txt (for crash reports) */
+(()=>{ let n=0; const send=m=>{ if(n++>20) return; try{ fetch("/api/clientlog/line",{method:"POST",body:JSON.stringify({msg:String(m).slice(0,500)}),keepalive:true}); }catch(_){} };
+  window.addEventListener("error",e=>{ if(/ResizeObserver loop/.test(e.message||"")) return; send(`JS error: ${e.message} @ ${(e.filename||"").split("/").pop().split("#")[0]}:${e.lineno}`); });
+  window.addEventListener("unhandledrejection",e=>send(`JS promise: ${(e.reason&&(e.reason.stack||e.reason.message))||e.reason}`));
+  setInterval(()=>{ const m=performance.memory; if(m&&m.usedJSHeapSize>1.2e9) send(`memory high: ${Math.round(m.usedJSHeapSize/1e6)} MB`); },60000); })();
 
 /* ================================================================ tablet page */
 /* ---- motion helpers */
