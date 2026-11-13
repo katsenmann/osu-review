@@ -40,6 +40,7 @@ from core.osuapi import OsuApi
 from core.tosu import TosuBridge
 from core.lazercalc import LazerCalc, build_job
 from core.updater import Updater
+from core.tray import Tray
 
 APP_NAME = "osu!review"
 PORT = 47290
@@ -1559,8 +1560,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True})
             if path == "/api/quit":
                 self._send(200, {"ok": True})
-                S.shell.quit = True
-                threading.Timer(1.2, lambda: os._exit(0)).start()
+                quit_app()
                 return
             return self._send(404, {"error": "not found"})
         except Exception as e:
@@ -1607,8 +1607,30 @@ def read_version():
         return {"version": "?", "changes": {}}
 
 
+def quit_app():
+    """Ends osu!review completely (window, tray icon, background part)."""
+    log("quit")
+    S.shell.quit = True
+    if getattr(S, "tray", None):
+        S.tray.remove()
+    threading.Timer(1.2, lambda: os._exit(0)).start()
+
+
+def tray_check_updates():
+    s = S.updater.check()
+    if s.get("available"):
+        S.tray.notify("Update available", f'osu!review v{s["latest"]} is ready – open osu!review to install it.')
+        open_ui()
+    elif s.get("error") and not s.get("latest"):
+        S.tray.notify("Couldn't check for updates", "GitHub can't be reached right now.")
+    else:
+        S.tray.notify("osu!review is up to date", f'You have the newest version (v{s["current"]}).')
+
+
 def restart_self():
     log("Python files changed – restarting …")
+    if getattr(S, "tray", None):
+        S.tray.remove()
     args = [sys.executable, os.path.join(HERE, "app.py"), "--no-window", "--restarted"]
     flags = 0
     if os.name == "nt":
@@ -1696,6 +1718,16 @@ def main():
     S.renderer = Renderer(DATA, log, diag_dir=os.path.join(HERE, "diagnostics"))
     S.rosu = RosuVendor(DATA, log)
     S.updater = Updater(HERE, DATA, log, lambda: read_version().get("version") or "0")
+    S.tray = None
+    if os.name == "nt" and S.cfg.get("tray", True):
+        S.tray = Tray(os.path.join(HERE, "web", "icon.ico"), log, on_open=lambda: open_ui(),
+                      on_update=tray_check_updates, on_quit=quit_app,
+                      tip=f'osu!review {read_version().get("version", "")}'.strip())
+        if not S.tray.start():
+            S.tray = None
+    if S.tray:
+        S.updater.on_available = lambda v: S.tray.notify("Update available",
+                                                         f"osu!review v{v} is ready – open osu!review and click “Update now”.")
     threading.Thread(target=S.updater.loop, daemon=True).start()
     S.lazer = LazerCalc(DATA, log)
     S.lazer.ensure_async()

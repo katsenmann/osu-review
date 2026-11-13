@@ -64,6 +64,23 @@ def set_native_icon(win):
         log(f"icon: {e}")
 
 
+def on_ui(win, fn):
+    """Runs fn on the window's UI thread without waiting for it (Windows); elsewhere directly."""
+    if os.name != "nt":
+        return fn()
+    try:
+        from System import Action  # pythonnet
+
+        def run():
+            try:
+                fn()
+            except Exception as e:
+                log(f"ui task: {e}")
+        win.native.BeginInvoke(Action(run))
+    except Exception as e:
+        log(f"ui task not queued: {e}")
+
+
 def raise_window(win):
     try:
         win.restore()
@@ -141,7 +158,13 @@ def main():
         faulthandler.enable(open(os.path.join(data_dir(), "window.log"), "a", encoding="utf-8"))
     except Exception:
         pass
-    log(f"window start (pid {os.getpid()})")
+    log(f"window start (pid {os.getpid()}, {sys.executable})")
+    # if the window hangs before the page has loaded, write where it is stuck into window.log
+    try:
+        import faulthandler
+        faulthandler.dump_traceback_later(20, repeat=True, file=open(os.path.join(data_dir(), "window.log"), "a", encoding="utf-8"))
+    except Exception:
+        pass
     set_windows_identity()
     if not has_webview2():
         log("WebView2 runtime not installed")
@@ -188,11 +211,25 @@ def main():
                     os._exit(0)
 
     def on_shown():
-        set_native_icon(win)
-        threading.Timer(2.0, lambda: watch_webview(win)).start()
+        # Never touch win.native from this thread: pywebview waits on the UI thread while this
+        # handler runs, and a direct WinForms call from here waits for the UI thread too ->
+        # the window froze grey ("not responding"). BeginInvoke queues the work and returns.
+        log("window shown")
+        threading.Timer(1.5, lambda: on_ui(win, lambda: (set_native_icon(win), watch_webview(win)))).start()
         threading.Thread(target=poll, daemon=True).start()
 
+    def on_loaded():
+        try:
+            import faulthandler
+            faulthandler.cancel_dump_traceback_later()
+        except Exception:
+            pass
+        if not getattr(on_loaded, "done", False):
+            on_loaded.done = True
+            log("page loaded")
+
     win.events.shown += on_shown
+    win.events.loaded += on_loaded
     store = os.path.join(data_dir(), "window-data")
     os.makedirs(store, exist_ok=True)
     try:

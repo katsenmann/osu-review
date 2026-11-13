@@ -5,3 +5,5 @@ diagnostics/
 python/
 runtime/
 *.osr
+build/
+dist/

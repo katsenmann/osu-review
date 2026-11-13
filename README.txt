@@ -1,20 +1,27 @@
 osu!review – replay analysis right after every score
 ====================================================
 
-SETUP
+INSTALL
+Easiest: download osu-review-Setup.exe from
+  https://github.com/katsenmann/osu-review/releases/latest
+and run it (Windows may say "Windows protected your PC": click "More info",
+then "Run anyway"). It brings everything it needs, no Python required.
+Uninstall: Windows Settings > Apps > osu!review.
+
+THIS ZIP (without installer)
 1. Unzip the folder somewhere it can stay (e.g. Documents\osu-review).
 2. Double-click "Install.bat" -> desktop shortcut (+ optional autostart).
    Only Python 3 is needed - if it's missing, Install.bat downloads a small
    private copy into this folder.
 3. Start osu!review with the shortcut or "Start.bat".
+- Remove: "Uninstall.bat" - pick 1 (program only, your scores and settings
+  are kept) or 2 (also deletes your scores and settings in
+  %APPDATA%\osu-review). Rendered videos are never deleted.
 
-UPDATE / UNINSTALL
-- New version: double-click "Uninstall.bat" in the old folder and pick 1
-  (program only - your scores and settings are kept), then unzip the new
-  version and run its "Install.bat". Simply unzipping over the old folder
-  works too.
-- Remove completely: "Uninstall.bat" and pick 2 (also deletes your scores and
-  settings in %APPDATA%\osu-review). Rendered videos are never deleted.
+UPDATES
+osu!review checks for new versions by itself and shows an "Update now"
+button - one click, your scores and settings stay. The tray icon next to the
+clock (right-click) can also check for updates or quit osu!review.
 
 HOW IT WORKS
 - osu!review runs in the background and watches
@@ -57,6 +64,5 @@ SKINS
 
 DATA
 - Settings and data: %APPDATA%\osu-review     Local port: 127.0.0.1:47290
-- Updates written into this folder are picked up automatically.
 
 Made by Katsenmann x Claude

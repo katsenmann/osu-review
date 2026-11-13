@@ -2,6 +2,10 @@
   "version": "1.0.0-beta.3",
   "changes": {
     "en": [
+      "Fixed: the window could freeze grey (“not responding”) right after opening – it set its icon from the wrong thread. This was behind many of the “crashes”",
+      "Setup.exe: osu!review now comes with an installer – no Python install needed, Start menu and desktop shortcut, optional start with Windows, uninstall via Windows Settings > Apps (asks whether to keep your scores)",
+      "Tray icon next to the clock: open osu!review, check for updates or quit; update notices also pop up there",
+      "Timeline under the replay now lines up with the replay's seek bar in windowed mode, and charts like “Tablet on this map” no longer get squished after resizing the window",
       "Window crashes are now written to the log (exit code, WebView2 engine failures, JS errors) and the window reopens by itself after a crash",
       "If only the page inside the window dies, it reloads instead of leaving a dead window",
       "Tablet on this map: removed the “space left/right goes unused” advice – that depends on the map, not on your area. You still get a warning when your pen hits the edge of the area",
