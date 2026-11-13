@@ -7,7 +7,7 @@
 <meta name="description" content="osu!review analyses every osu! score the moment you finish it: misses with reasons, hit error, aim, streams and jumps, your tablet area – plus a studio to render replays as video.">
 <meta property="og:title" content="osu!review">
 <meta property="og:description" content="Replay analysis right after every score – misses, aim, streams & jumps, tablet area, video rendering.">
-<meta property="og:image" content="img/home.jpg">
+<meta property="og:image" content="https://katsenmann.github.io/osu-review/img/home.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='18' fill='%23bf4d80' stroke='white' stroke-width='3.5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -52,7 +52,7 @@ h2{font-size:clamp(28px,3.6vw,40px);letter-spacing:-.02em;margin:0 0 12px;font-w
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .f{background:linear-gradient(180deg,#ffffff08,#ffffff03);border:1px solid var(--line);border-radius:18px;padding:24px;transition:border-color .25s,transform .25s}
 .f:hover{border-color:#ff66ab55;transform:translateY(-3px)}
-.f .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:#ff66ab18;margin-bottom:14px}
+.f .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#ff66ab18;color:var(--pink);margin-bottom:14px}.f .ic svg{width:24px;height:24px}.btn svg{width:19px;height:19px;flex:none}
 .f h3{margin:0 0 6px;font-size:17px}.f p{margin:0;color:var(--ink2);font-size:14.5px}
 .shot{border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000;background:var(--panel)}
 .shot img{display:block;width:100%;height:auto}
@@ -87,7 +87,7 @@ footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}footer .r{m
     <h1>Know <span>why</span> you missed.</h1>
     <p class="lead">osu!review analyses every score the moment you finish it – misses with reasons, hit error, aim, streams and jumps, your tablet area – and renders your replays as video.</p>
     <div class="cta">
-      <a class="btn main" href="https://github.com/katsenmann/osu-review/releases/latest">⬇ Download for Windows</a>
+      <a class="btn main" href="https://github.com/katsenmann/osu-review/releases/latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Download for Windows</a>
       <a class="btn sec" href="https://github.com/katsenmann/osu-review">View on GitHub</a>
     </div>
     <div class="small" id="ver">Unzip, run Install.bat, play.</div>
@@ -106,12 +106,12 @@ footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}footer .r{m
   <h2 class="reveal">Everything about your play, right after you play it</h2>
   <p class="sub reveal">It runs in the background and opens on its own when you finish a map. No uploading, no waiting – everything stays on your PC.</p>
   <div class="grid">
-    <div class="f reveal"><div class="ic">🎯</div><h3>Miss analyzer</h3><p>Every miss and slider break with the reason – clicked off target, note lock, too early or late, slider end – replayed with osu!'s own rules.</p></div>
-    <div class="f reveal"><div class="ic">▶️</div><h3>Replay viewer</h3><p>Your skin, the song and hitsounds, frame by frame, aim lens, cursor path, and a switch to turn Hidden off.</p></div>
-    <div class="f reveal"><div class="ic">🖥️</div><h3>Live side panels</h3><p>In the big view: what's happening now, aim on your last jumps, cursor speed, your pen on the tablet, hit timing and keys.</p></div>
-    <div class="f reveal"><div class="ic">🌊</div><h3>Streams & jumps</h3><p>Stamina curve, timing drift, alternation, over/undershoot by distance and direction – and your stream and jump limits.</p></div>
-    <div class="f reveal"><div class="ic">✏️</div><h3>Tablet & area</h3><p>Your OpenTabletDriver area live, report rate, and an overall rating of your area from all your replays.</p></div>
-    <div class="f reveal"><div class="ic">🎬</div><h3>Studio</h3><p>Render replays to video with danser-go – HUD with pp counter and key overlay, motion blur, up to 4K.</p></div>
+    <div class="f reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></div><h3>Miss analyzer</h3><p>Every miss and slider break with the reason – clicked off target, note lock, too early or late, slider end – replayed with osu!'s own rules.</p></div>
+    <div class="f reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.5 9.2v5.6l4.6-2.8z"/></svg></div><h3>Replay viewer</h3><p>Your skin, the song and hitsounds, frame by frame, aim lens, cursor path, and a switch to turn Hidden off.</p></div>
+    <div class="f reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 5v14M16 5v14"/><circle cx="12" cy="12" r="1.6"/></svg></div><h3>Live side panels</h3><p>In the big view: what's happening now, aim on your last jumps, cursor speed, your pen on the tablet, hit timing and keys.</p></div>
+    <div class="f reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><circle cx="5" cy="17" r="1.6"/><circle cx="12" cy="17" r="1.6"/><circle cx="19" cy="17" r="1.6"/></svg></div><h3>Streams & jumps</h3><p>Stamina curve, timing drift, alternation, over/undershoot by distance and direction – and your stream and jump limits.</p></div>
+    <div class="f reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><rect x="7" y="10" width="7" height="5" rx="1"/><path d="M20 3l-6.5 8.5"/></svg></div><h3>Tablet & area</h3><p>Your OpenTabletDriver area live, report rate, and an overall rating of your area from all your replays.</p></div>
+    <div class="f reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="13" height="10" rx="3"/><path d="M16 10.5l5-3v9l-5-3z"/></svg></div><h3>Studio</h3><p>Render replays to video with danser-go – HUD with pp counter and key overlay, motion blur, up to 4K.</p></div>
   </div>
   <div class="pp reveal"><span>pp from the osu! API, tosu or osu!lazer's own calculator</span><span>Themes & map backgrounds</span><span>Ctrl+K command bar</span><span>Relax, Hidden, DT, failed scores</span></div>
 </div></section>
@@ -142,7 +142,7 @@ footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}footer .r{m
 <div class="fin"><div class="wrap">
   <h2 class="reveal">Stop guessing. Start reviewing.</h2>
   <p class="sub reveal" style="margin:0 auto 26px">Free, runs on your PC.</p>
-  <a class="btn main reveal" href="https://github.com/katsenmann/osu-review/releases/latest">⬇ Download osu!review</a>
+  <a class="btn main reveal" href="https://github.com/katsenmann/osu-review/releases/latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Download osu!review</a>
 </div></div>
 
 <footer><div class="wrap">
