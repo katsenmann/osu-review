@@ -37,6 +37,9 @@ if (-not (Test-Path "$py\Lib\site-packages\webview")) {
   Invoke-WebRequest https://bootstrap.pypa.io/get-pip.py -OutFile "$cache\get-pip.py"
   & "$py\python.exe" "$cache\get-pip.py" --no-warn-script-location
   if ($LASTEXITCODE) { throw "pip could not be set up" }
+  # some pywebview helpers only ship as source -> setuptools/wheel are needed to build them
+  & "$py\python.exe" -m pip install --no-warn-script-location setuptools wheel
+  if ($LASTEXITCODE) { throw "setuptools could not be installed" }
   & "$py\python.exe" -m pip install --no-warn-script-location "pywebview>=5,<7"
   if ($LASTEXITCODE) { throw "pywebview could not be installed" }
   & "$py\python.exe" -m pip uninstall -y pip setuptools wheel | Out-Null
