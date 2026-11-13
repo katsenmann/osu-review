@@ -76,8 +76,8 @@ Everything stays on your PC: scores and settings live in `%APPDATA%\osu-review`,
 
 ## Thanks to
 
-[danser-go](https://github.com/Wieku/danser-go) (video rendering) · [rosu-pp](https://github.com/MaxOhn/rosu-pp) · [tosu](https://github.com/tosuapp/tosu) and its lazer calculator build · [OpenTabletDriver](https://github.com/OpenTabletDriver/OpenTabletDriver) · the osu! team
+[danser-go](https://github.com/Wieku/danser-go) (video rendering) · [rosu-pp](https://github.com/MaxOhn/rosu-pp) · [tosu](https://github.com/tosuapp/tosu) and its lazer calculator build · [OpenTabletDriver](https://github.com/OpenTabletDriver/OpenTabletDriver) 
 
 ---
 
-<p align="center">Made by Katsenmann x Claude · not affiliated with ppy / osu!</p>
+<p align="center">Made by Katsenmann · not affiliated with ppy / osu!</p>
