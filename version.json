@@ -1,7 +1,8 @@
 {
-  "version": "2.19.9",
+  "version": "1.0.0-beta.1",
   "changes": {
     "en": [
+      "First public beta – version numbers start fresh at 1.0.0-beta.1 (this is the former 2.19.9)",
       "Failed scores: the objects the game still counts as misses while the fail plays out are now included, so the miss count matches the game (scores are re-analysed once)",
       "Home: big see-through osu!-style icons behind the three cards and scene changes – Live analysis: the hit circle bursts like a real hit with “300”; Studio: viewfinder with REC; Tablet: the pen drags an area across the screen like in OpenTabletDriver",
       "Hidden scores: new “👁 Hidden” switch under the replay – turn Hidden off to see the circles and approach circles where you missed",
