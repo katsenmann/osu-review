@@ -51,4 +51,4 @@ Everything stays on your PC: scores and settings live in `%APPDATA%\osu-review`,
 
 ---
 
-<p align="center">Made by Katsenmann x Claude · not affiliated with ppy / osu!</p>
+<p align="center">Made by Katsenmann · not affiliated with ppy / osu!</p>
