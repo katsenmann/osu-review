@@ -25,6 +25,7 @@ class TosuBridge:
         self.client = None
         self.session = None          # current play: {md5, curve: [[t, pp]], ...}
         self.records = []            # finished plays (results screen seen)
+        self.on_fail = None          # callback(info) once per failed play (health ran out, osu!stable)
         try:
             self.records = json.load(open(self.file, encoding="utf-8"))[-40:]
         except Exception:
@@ -61,7 +62,7 @@ class TosuBridge:
                     self.log(f"tosu no longer reachable ({type(e).__name__})")
                 self.connected = False
                 was = "off"
-                time.sleep(3)
+                time.sleep(5)
 
     def _handle(self, st, d):
         bm = d.get("beatmap") or {}
@@ -75,6 +76,7 @@ class TosuBridge:
                 s = self.session = {"md5": md5, "curve": [], "last_t": t, "seen": time.time(),
                                     "player": play.get("playerName"), "done": False}
             s["seen"] = time.time()
+            self._watch_fail(s, play, t)
             if t != s["last_t"] or not s["curve"]:
                 if not s["curve"] or abs(pp - s["curve"][-1][1]) > 1e-6 or t - s["curve"][-1][0] > 2000:
                     s["curve"].append([round(t), round(pp, 3)])
@@ -107,6 +109,30 @@ class TosuBridge:
                     os.replace(tmp, self.file)
                 except OSError:
                     pass
+
+    def _watch_fail(self, s, play, t):
+        """Health at 0 for a moment during a play (no NoFail) = the game over screen is up."""
+        hb = play.get("healthBar") or {}
+        hp = hb.get("normal")
+        if hp is None:
+            return
+        try:
+            hp = float(hp)
+        except (TypeError, ValueError):
+            return
+        if hp > 0.5:
+            s["alive"] = True
+            s.pop("hp0", None)
+            return
+        mods = str(((play.get("mods") or {}).get("name")) or "")
+        if not s.get("alive") or s.get("fail_sent") or "NF" in mods or "AT" in mods or "RX" in mods or "AP" in mods:
+            return
+        s.setdefault("hp0", time.time())
+        if time.time() - s["hp0"] >= 1.8:          # fail animation has started, game over menu is coming up
+            s["fail_sent"] = True
+            info = {"md5": s["md5"], "time": t, "client": self.client, "mods": mods}
+            if self.on_fail:
+                threading.Thread(target=self.on_fail, args=(info,), daemon=True).start()
 
     # ---------------------------------------------------------------- lookup
     def find(self, rep):
