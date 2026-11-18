@@ -713,6 +713,7 @@ body.lockmini .sidetog{display:none}
       <div class="sh"><h3 data-i18n="secOsu"></h3><p data-i18n="secOsuD"></p></div>
       <label class="srow"><div class="sl"><b data-i18n="watchStable"></b><small data-i18n="watchStableD"></small></div><span class="sw"><input type="checkbox" id="s_watch_stable"><i></i></span></label>
       <label class="srow"><div class="sl"><b data-i18n="watchLazer"></b><small data-i18n="watchLazerD"></small></div><span class="sw"><input type="checkbox" id="s_watch_lazer"><i></i></span></label>
+      <label class="srow"><div class="sl"><b data-i18n="autoFail"></b><small data-i18n="autoFailD"></small></div><span class="sw"><input type="checkbox" id="s_auto_save_fail"><i></i></span></label>
       <div class="srow col"><div class="sl"><b data-i18n="fStable"></b></div><span class="badge" data-st="stable"></span><input type="text" id="s_stable_path" spellcheck="false" placeholder="auto"></div>
       <div class="srow col"><div class="sl"><b data-i18n="fSongs"></b></div><span class="badge" data-st="songs"></span><input type="text" id="s_songs_path" spellcheck="false" placeholder="auto"></div>
       <div class="srow col"><div class="sl"><b data-i18n="fLazer"></b></div><span class="badge" data-st="lazer"></span><input type="text" id="s_lazer_path" spellcheck="false" placeholder="auto"></div>
@@ -722,6 +723,7 @@ body.lockmini .sidetog{display:none}
       <div class="sh"><h3 data-i18n="secPp"></h3><p data-i18n="secPpD"></p></div>
       <div class="sflow"><span class="fl" data-fl="api">1 · osu! API</span><span class="ar">→</span><span class="fl" data-fl="tosu">2 · tosu</span><span class="ar">→</span><span class="fl" data-fl="lazer">3 · osu!lazer calculator</span><span class="ar">→</span><span class="fl on">4 · rosu-pp</span></div>
       <div class="srow"><div class="sl"><b>osu!lazer pp calculator</b><small>The same calculator tosu uses, with the current pp formulas. Downloaded once (~60 MB), checked for updates every few days. Works without tosu running.</small></div><span class="badge" id="lzState"></span></div>
+      <label class="srow"><div class="sl"><b data-i18n="tosuAuto"></b><small><span data-i18n="tosuAutoD"></span> <span id="tosuMgr" style="color:var(--ink)"></span></small></div><span class="sw"><input type="checkbox" id="s_tosu_auto"><i></i></span></label>
       <div class="srow col"><div class="sl"><b data-i18n="fTosu"></b></div><span class="badge" data-st="tosu"></span><input type="text" id="s_tosu_url" spellcheck="false" placeholder="auto"></div>
       <div class="sbox"><div class="sl"><b data-i18n="apiTitle"></b><small data-i18n="apiHint"></small></div>
         <div class="s2"><div><label>Client-ID</label><input type="text" id="s_osu_client_id" autocomplete="off"></div>
@@ -774,6 +776,10 @@ const I18N = {
   waitTitle:"Waiting for your next score…", waitText:"Play a map in osu! stable or lazer – as soon as the score is saved,<br>the analysis shows up here automatically.",
   settings:"Settings", language:"Language", langAuto:"Automatic (system language)", fStable:"osu! stable folder", fSongs:"Songs folder (stable)", fLazer:"osu!lazer data folder",
   fSkins:"Skins folder (stable, usually osu!\\Skins)", watchStable:"Watch stable", watchLazer:"Watch lazer", onNew:"On new score",
+  autoFail:"Save failed plays automatically (osu!stable)", autoFailD:"When you fail, osu!review presses F2 on the game over screen so the replay is saved and analysed. Uses tosu (osu!review starts it for you). osu!lazer: use the save button on the fail screen.",
+  tosuAuto:"Run tosu automatically", tosuAutoD:"osu!review downloads tosu once (~50 MB) and runs it quietly in the background – for pp and to notice failed plays. Nothing to install yourself.",
+  tmRun:"· running ({v})", tmExt:"· using your own tosu", tmDl:"· downloading …", tmErr:"· problem: {e}", tmOff:"· off",
+  tsMap:"Map on tablet", tsMapOp:"opacity", tsLegMap:"map",
   popApp:"Open own window", popBrowser:"Open in default browser", popOff:"Open nothing (list only)", toFront:"Bring window to front automatically",
   rwHandoff:"Hand new replays to Rewind automatically", rwFolder:"Folder Rewind watches (usually osu!\\Replays)", rwExe:"Rewind.exe (optional, for “Open in Rewind”)",
   reindex:"Rescan beatmaps", cancel:"Cancel", save:"Save", reindexing:"Rescanning beatmaps…",
@@ -1184,7 +1190,11 @@ function render(p){
     </div>
     ${viewerCardHTML()}
     ${hasTab?`<div class="card tcard">
-      <h3>${T("tsTitle")}</h3><div class="hint" id="tsHint">${T("tsHint")}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">${T("tsTitle")}</h3>
+        <div class="tsmapc" id="tsMapC" style="display:none;margin-left:auto;align-items:center;gap:8px;font-size:12px;color:var(--ink2)">
+          <label class="chk" style="margin:0"><input type="checkbox" id="tsMap"> ${T("tsMap")}</label>
+          <input type="range" id="tsMapOp" min="10" max="100" step="5" style="width:80px" aria-label="${T("tsMapOp")}"><span id="tsMapOpV" style="min-width:32px;font-variant-numeric:tabular-nums"></span></div></div>
+      <div class="hint" id="tsHint">${T("tsHint")}</div>
       <div style="position:relative"><canvas class="chart" id="tsc" height="300"></canvas><canvas id="tsp" style="position:absolute;inset:0;width:100%;height:300px;pointer-events:none"></canvas></div>
       <div class="legend" id="tsLeg" style="margin-top:4px;font-size:11.5px"></div>
       <div class="insights tskv" id="tskv"></div>
@@ -1677,6 +1687,7 @@ function setupViewer(p){
     const ox_=corner?0:-w/2, oy_=corner?0:-h/2;
     if(rot||flip){ g.save(); g.translate(x,y); if(rot) g.rotate(rot); if(flip) g.scale(1,-1); g.drawImage(im.bmp,ox_,oy_,w,h); g.restore(); } else g.drawImage(im.bmp,x+ox_,y+oy_,w,h); };
   let HD=!!((p.replay.mods||0)&8); const W50=a.windows.w50;
+  VW.hdOn=()=>HD;
   { const b=cv.closest(".card")?.querySelector("#tHD")||$("#tHD"); if(b&&HD){ b.style.display=""; const sync=()=>{ b.classList.toggle("on",HD); b.textContent=T(HD?"hdT":"hdOff"); };
       sync(); b.onclick=()=>{ HD=!HD; sync(); draw(); }; } }
   const posAt=tt=>{ const i=fi(tt), f=F[i]; if(!f) return [256,192]; const f2=F[i+1]; if(f2&&f2[0]>f[0]&&tt>f[0]){ const q=Math.min(1,(tt-f[0])/(f2[0]-f[0])); return [f[1]+(f2[1]-f[1])*q,f[2]+(f2[2]-f[2])*q]; } return [f[1],f[2]]; };
@@ -2110,12 +2121,44 @@ function setupTabStats(p){
     const minS=Math.min(L,Rr,Tp,Bt), wide=Math.max(L,Rr,Tp,Bt);
     // per score only warn when the pen ran into the edge – unused space depends on the map, not on the area
     if(minS<0.8) kv.insertAdjacentHTML("afterbegin",`<div class="ins" style="grid-column:1/-1"><div class="k">${T("tsMargins")}</div><div class="d" style="font-size:12.5px;color:var(--ink)">${T("tsMarginEdge")}</div></div>`); }
-  $("#tsLeg").innerHTML=`<span class="lg"><span style="color:#ff9fcb">■</span>${T("tsLegHeat")}</span><span class="lg"><span style="color:#8fdc4a">●</span>100</span><span class="lg"><span style="color:#ffc23d">●</span>50</span><span class="lg"><span style="color:#ff4d6d">✕</span>${T("miss")}</span><span class="lg"><span style="color:#5cc8ff">┅</span>${T("tsLegPf")}</span><span class="lg"><span style="color:#fff">●</span>${T("tsLegPen")}</span>`;
+  $("#tsLeg").innerHTML=`<span class="lg"><span style="color:#ff9fcb">■</span>${T("tsLegHeat")}</span><span class="lg"><span style="color:#8fdc4a">●</span>100</span><span class="lg"><span style="color:#ffc23d">●</span>50</span><span class="lg"><span style="color:#ff4d6d">✕</span>${T("miss")}</span><span class="lg"><span style="color:#5cc8ff">┅</span>${T("tsLegPf")}</span><span class="lg"><span style="color:#fff">●</span>${T("tsLegPen")}</span><span class="lg" id="tsLegMap"><span style="color:#cfdaff">○</span>${T("tsLegMap")}</span>`;
+  // map on the tablet: circles, sliders and approach circles in area millimetres, synced with the replay
+  const TM=Object.assign({on:true,op:0.6},CFG.tab_map||{}), mc=$("#tsMapC"), mbox=$("#tsMap"), mop=$("#tsMapOp");
+  const mapObjs=objs.map(o=>{ if(o.k!=="s") return o; const path=o.path&&o.path.length>1?o.path:(o.pts?sliderPath(o):null); return {...o,path}; });
+  const kx=sc*S0*A.w/D.w, ky=sc*S0*A.h/D.h, org=P(...toMM(0,0)), Rr=a.radius||32, pre=a.preempt||1200, W50m=(a.windows&&a.windows.w50)||150;
+  let forceDraw=false;
+  if(mc){ mc.style.display="flex"; mbox.checked=!!TM.on; mop.value=Math.round(TM.op*100); $("#tsMapOpV").textContent=mop.value+"%";
+    const save=()=>{ CFG.tab_map={on:mbox.checked,op:mop.value/100}; api("/api/settings",{method:"POST",body:JSON.stringify({tab_map:CFG.tab_map})}); };
+    const sync=()=>{ TM.on=mbox.checked; TM.op=mop.value/100; $("#tsMapOpV").textContent=mop.value+"%"; mop.disabled=!TM.on; const lg=$("#tsLegMap"); if(lg) lg.style.display=TM.on?"":"none"; forceDraw=true; };
+    mbox.onchange=()=>{ sync(); save(); }; mop.oninput=sync; mop.onchange=save; sync(); }
+  const drawMap=(pg,dpr,t)=>{
+    if(!TM.on) return; const hd=VW.hdOn&&VW.hdOn();
+    pg.save(); pg.setTransform(dpr*kx,0,0,dpr*ky,dpr*org[0],dpr*org[1]);
+    const lw=px=>px/Math.max(kx,ky);
+    for(let k=mapObjs.length-1;k>=0;k--){ const o=mapObjs[k]; if(o.k==="sp") continue;
+      const end=o.k==="s"?(o.end??o.t):o.t, until=end+(o.k==="s"?120:W50m*0.6);
+      if(t<o.t-pre||t>until) continue;
+      let al=Math.min(1,(t-(o.t-pre))/(pre*0.33));
+      if(t>end) al*=Math.max(0,1-(t-end)/(until-end||1));
+      if(hd){ const fo=o.t-pre*0.6; if(t>fo) al*=Math.max(0,1-(t-fo)/(pre*0.3)); }
+      if(al<=0.01) continue; pg.globalAlpha=TM.op*al;
+      if(o.k==="s"&&o.path&&o.path.length>1){ pg.lineCap="round"; pg.lineJoin="round";
+        pg.beginPath(); o.path.forEach((q,j)=>j?pg.lineTo(q[0],q[1]):pg.moveTo(q[0],q[1]));
+        pg.strokeStyle="rgba(207,218,255,0.55)"; pg.lineWidth=Rr*2; pg.stroke();
+        pg.strokeStyle="rgba(28,26,36,0.9)"; pg.lineWidth=Rr*2-lw(3); pg.stroke();
+        pg.strokeStyle="rgba(159,184,255,0.22)"; pg.stroke();
+        if(t>=o.t&&t<=end){ if(!o.cum){ o.cum=[0]; for(let j=1;j<o.path.length;j++) o.cum.push(o.cum[j-1]+Math.hypot(o.path[j][0]-o.path[j-1][0],o.path[j][1]-o.path[j-1][1])); }
+          const sl=o.slides||1, f0=(t-o.t)/((end-o.t)||1)*sl, rep=Math.floor(f0), fr=f0-rep, f=Math.max(0,Math.min(1,rep%2?1-fr:fr)), b=pathAt(o.path,o.cum,f);
+          pg.strokeStyle="#ffffff"; pg.lineWidth=lw(1.5); pg.beginPath(); pg.arc(b[0],b[1],Rr*1.6,0,7); pg.stroke(); } }
+      if(t<=o.t+W50m||o.k==="s"&&t<=end){ pg.fillStyle="rgba(159,184,255,0.32)"; pg.strokeStyle="#e4ebff"; pg.lineWidth=lw(1.8); pg.beginPath(); pg.arc(o.x,o.y,Rr,0,7); pg.fill(); pg.stroke(); }
+      if(!hd&&t<o.t){ const ar=Rr*(1+3*(o.t-t)/pre); pg.strokeStyle="#9fb8ff"; pg.lineWidth=lw(1.3); pg.beginPath(); pg.arc(o.x,o.y,ar,0,7); pg.stroke(); } }
+    pg.restore(); pg.globalAlpha=1; };
   // live pen, synced with the replay
   const pc=$("#tsp"); if(pc){ pc.style.display=""; clearInterval(setupTabStats.iv); let lastT=null;
-    clearInterval(setupTabStats.iv); setupTabStats.iv=setInterval(()=>{ if(!document.body.contains(pc)){ clearInterval(setupTabStats.iv); return; } if(VW.t===lastT) return; lastT=VW.t;
+    clearInterval(setupTabStats.iv); setupTabStats.iv=setInterval(()=>{ if(!document.body.contains(pc)){ clearInterval(setupTabStats.iv); return; } if(VW.t===lastT&&!forceDraw) return; lastT=VW.t; forceDraw=false;
       const r=pc.getBoundingClientRect(), d=devicePixelRatio||1; if(pc.width!==Math.round(r.width*d)){ pc.width=Math.round(r.width*d); pc.height=Math.round(r.height*d); }
       const pg=pc.getContext("2d"); pg.setTransform(d,0,0,d,0,0); pg.clearRect(0,0,r.width,r.height);
+      drawMap(pg,d,VW.t); pg.setTransform(d,0,0,d,0,0);
       let i=0,lo=0,hi=F.length-1; while(lo<=hi){ const m=(lo+hi)>>1; if(F[m][0]<=VW.t){ i=m; lo=m+1; } else hi=m-1; }
       for(let j=Math.max(0,i-18);j<=i;j++){ const f=F[j]; if(!f) continue; const q=P(...toMM(f[1],f[2])); pg.globalAlpha=(j-(i-18))/18*0.5; pg.fillStyle="#fff"; pg.beginPath(); pg.arc(q[0],q[1],2,0,7); pg.fill(); }
       const f=F[i]; if(!f) return; const q=P(...toMM(f[1],f[2])); pg.globalAlpha=1; pg.shadowColor=UI.ac; pg.shadowBlur=10; pg.fillStyle=(f[3]&15)?UI.ac:"#fff"; pg.beginPath(); pg.arc(q[0],q[1],(f[3]&15)?6:4.5,0,7); pg.fill(); pg.shadowBlur=0; },40); }
@@ -3640,6 +3683,7 @@ applyTheme();
 const SDOT={osu:["stable","songs","lazer","skins"],pp:["tosu"],tab:["otd"],rw:["rewind_folder","rewind_exe"]};
 function fillSettings(s){
   const P=s.paths, cfg=s.cfg, D=$("#modal");
+  { const m=s.tosu_mgr, el=$("#tosuMgr"); if(el) el.textContent=!m?"":m.state==="running"?T("tmRun",{v:m.version||""}):m.state==="external"?T("tmExt"):m.state==="downloading"?T("tmDl"):m.state==="error"?T("tmErr",{e:m.error||""}):m.state==="disabled"?"":T("tmOff"); }
   D.querySelectorAll("[data-st]").forEach(b=>{ const ok=!!P[b.dataset.st]; b.className="badge "+(ok?"ok":"bad"); b.textContent=ok?T("stFound"):(b.dataset.st==="tosu"?T("stNotRunning"):T("stMissing")); });
   for(const k in SDOT){ const d=D.querySelector(`[data-dot="${k}"]`); const need=k==="osu"?(cfg.watch_stable?["stable","songs"]:[]).concat(cfg.watch_lazer?["lazer"]:[]):SDOT[k];
     d.className=need.every(x=>P[x])?"ok":"bad"; if(k==="pp") d.className=(P.tosu||cfg.osu_client_id)?"ok":"mid"; if(k==="rw") d.className=cfg.rewind_handoff?(P.rewind_folder?"ok":"bad"):"off"; if(k==="tab") d.className=P.otd?"ok":"mid"; }
@@ -3663,7 +3707,7 @@ $("#modal").addEventListener("click",e=>{ if(e.target.id==="modal"&&_mdDown===e.
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("#modal").classList.contains("open")) $("#modal").classList.remove("open"); });
 $("#sTheme").onclick=$("#sTheme2").onclick=()=>{ $("#modal").classList.remove("open"); openThemer(); };
 
-const FIELDS=["tosu_url","osu_client_id","osu_client_secret","stable_path","songs_path","lazer_path","skins_path","otd_path","screen_w","screen_h","watch_stable","watch_lazer","popup","bring_to_front","rewind_handoff","rewind_folder","rewind_exe"];
+const FIELDS=["tosu_url","osu_client_id","osu_client_secret","stable_path","songs_path","lazer_path","skins_path","otd_path","screen_w","screen_h","watch_stable","watch_lazer","popup","bring_to_front","rewind_handoff","rewind_folder","rewind_exe","auto_save_fail","tosu_auto"];
 $("#btnSettings").onclick=async()=>{ const s=await loadStatus(); FIELDS.forEach(f=>{ const el=$("#s_"+f); if(el.type==="checkbox") el.checked=!!s.cfg[f]; else el.value=s.cfg[f]??""; });
   fillSettings(s);
   $("#modal").classList.add("open"); };
