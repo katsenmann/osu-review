@@ -81,6 +81,23 @@ def on_ui(win, fn):
         log(f"ui task not queued: {e}")
 
 
+def raise_native(win, js=None):
+    """Runs on the UI thread (Windows): jump to a score and bring the window to the front."""
+    from System.Windows.Forms import FormWindowState
+    f = win.native
+    if js:
+        try:
+            f.browser.webview.CoreWebView2.ExecuteScriptAsync(js)
+        except Exception as e:
+            log(f"raise js: {e}")
+    if f.WindowState == FormWindowState.Minimized:
+        f.WindowState = FormWindowState.Normal
+    f.Show()
+    f.TopMost = True
+    f.Activate()
+    f.TopMost = False
+
+
 def raise_window(win):
     try:
         win.restore()
@@ -198,12 +215,18 @@ def main():
             except Exception:
                 continue
             if r.get("show"):
-                if r.get("hash"):
-                    try:
-                        win.evaluate_js(f"location.hash={json.dumps(r['hash'].lstrip('#'))}")
-                    except Exception:
-                        pass
-                raise_window(win)
+                # like the icon: on Windows only queue the work on the UI thread, never wait for it
+                # (waiting from this thread could freeze the window when a new score came in)
+                js = f"location.hash={json.dumps(r['hash'].lstrip('#'))}" if r.get("hash") else None
+                if os.name == "nt":
+                    on_ui(win, lambda js=js: raise_native(win, js))
+                else:
+                    if js:
+                        try:
+                            win.evaluate_js(js)
+                        except Exception:
+                            pass
+                    raise_window(win)
             if r.get("quit"):
                 try:
                     win.destroy()

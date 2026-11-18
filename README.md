@@ -49,6 +49,8 @@ That's it. osu!review finds your osu! folders on its own. If it ever doesn't, se
 
 - **It lives next to the clock.** osu!review keeps running in the background so it can catch your scores – look for the osu!review icon in the tray next to the clock (maybe behind the little **^** arrow). Right-click it to open, check for updates or quit. Closing the window doesn't stop it, *Quit* does.
 - **Updates come by themselves.** When there's a new version, osu!review shows a notice with an **Update now** button – one click, your scores and settings stay. You can also check by hand in **Settings → General → Updates**.
+- **Failed plays:** osu! doesn't keep a replay when you fail. In osu!stable press **F2** on the game over screen (or turn on **Settings → osu! → Save failed plays automatically** – osu!review does it for you); in osu!lazer click the save button on the fail screen. osu!review then analyses it up to the point where you failed.
+- **tosu is built in:** osu!review downloads [tosu](https://github.com/tosuapp/tosu) once and runs it quietly in the background (live pp, failed-play detection). Already running your own tosu? Then that one is used. Off switch: **Settings → pp**.
 - **Uninstall:** Windows **Settings → Apps → Installed apps → osu!review → Uninstall**. It asks whether to also delete your analysed scores – say **No** if you might come back.
 - **Tablet stats:** need [OpenTabletDriver](https://opentabletdriver.net/). Everything else works without it.
 
@@ -76,8 +78,8 @@ Everything stays on your PC: scores and settings live in `%APPDATA%\osu-review`,
 
 ## Thanks to
 
-[danser-go](https://github.com/Wieku/danser-go) (video rendering) · [rosu-pp](https://github.com/MaxOhn/rosu-pp) · [tosu](https://github.com/tosuapp/tosu) and its lazer calculator build · [OpenTabletDriver](https://github.com/OpenTabletDriver/OpenTabletDriver) 
+[danser-go](https://github.com/Wieku/danser-go) (video rendering) · [rosu-pp](https://github.com/MaxOhn/rosu-pp) · [tosu](https://github.com/tosuapp/tosu) and its lazer calculator build · [OpenTabletDriver](https://github.com/OpenTabletDriver/OpenTabletDriver) · the osu! team
 
 ---
 
-<p align="center">Made by Katsenmann · not affiliated with ppy / osu!</p>
+<p align="center">Made by Katsenmann x Claude · not affiliated with ppy / osu!</p>

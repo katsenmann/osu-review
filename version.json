@@ -1,28 +1,11 @@
 {
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "changes": {
     "en": [
-      "Fixed: the window could freeze grey (“not responding”) right after opening – it set its icon from the wrong thread. This was behind many of the “crashes”",
-      "Setup.exe: osu!review now comes with an installer – no Python install needed, Start menu and desktop shortcut, optional start with Windows, uninstall via Windows Settings > Apps (asks whether to keep your scores)",
-      "Tray icon next to the clock: open osu!review, check for updates or quit; update notices also pop up there",
-      "Timeline under the replay now lines up with the replay's seek bar in windowed mode, and charts like “Tablet on this map” no longer get squished after resizing the window",
-      "Window crashes are now written to the log (exit code, WebView2 engine failures, JS errors) and the window reopens by itself after a crash",
-      "If only the page inside the window dies, it reloads instead of leaving a dead window",
-      "Tablet on this map: removed the “space left/right goes unused” advice – that depends on the map, not on your area. You still get a warning when your pen hits the edge of the area",
-      "Updates: osu!review now checks GitHub for new versions and shows a notice with an “Update now” button – one click downloads and installs it, your scores and settings stay (Settings > General > Updates to check by hand)",
-      "First public beta – version numbers start fresh at 1.0.0-beta.1 (this is the former 2.19.9)",
-      "Failed scores: the objects the game still counts as misses while the fail plays out are now included, so the miss count matches the game (scores are re-analysed once)",
-      "Home: big see-through osu!-style icons behind the three cards and scene changes – Live analysis: the hit circle bursts like a real hit with “300”; Studio: viewfinder with REC; Tablet: the pen drags an area across the screen like in OpenTabletDriver",
-      "Hidden scores: new “👁 Hidden” switch under the replay – turn Hidden off to see the circles and approach circles where you missed",
-      "No more console windows flashing up: the check for the system's Node.js (used by the lazer pp calculator) ran for every score without hiding its window – now it runs once and hidden",
-      "Relax scores: the miss analyzer no longer marks short sliders as slider breaks, and misses now match the game – relax clicks are worked out from where your cursor was (scores are re-analysed once)",
-      "Uninstall.bat: stops osu!review, removes shortcuts/autostart and the program - keeps your scores and settings (option 1, for updating) or deletes everything (option 2)",
-      "Tablet: playfield and aim view were drawn in the wrong place (even off the tablet) when another monitor sits left of or above the main screen – the screen osu! runs on is now located like OpenTabletDriver does it",
-      "Streams card per score: every stream on the timeline (click = watch it), stamina curve, timing drift, alternate/singletap with key balance, aim at corners vs. straight parts, your stream limit and the hardest streams",
-      "Jumps card per score: all jumps by distance and time with jump sections, clean % and over/undershoot by distance, direction rose, flow vs. angled vs. back-and-forth, corrections, path detour, peak speed and your jump limit (also in mm on your tablet)",
-      "Big/fullscreen replay: panels left and right of the playfield – what's happening now (stream/jumps/slider/break), live aim of your last jumps, cursor speed, live tablet with your pen, timing of the last 30 hits and a key overlay with tapping BPM",
-      "Timeline: stream and jump sections are marked at the bottom",
-      "Home: new “Your limits” card – best clean stream BPM, biggest clean jumps, wide-jump over/undershoot, trend and a tip"
+      "Map on tablet: the replay's \"Tablet on this map\" view can now show the map itself – circles, sliders and approach circles, synced with the replay, right where they were on your tablet area. Toggle and opacity next to the title; follows the Hidden switch.",
+      "Failed plays (osu!stable): new setting \"Save failed plays automatically\" – when your health runs out, osu!review presses F2 on the game over screen so the replay gets saved and analysed. Needs tosu running; off by default.",
+      "tosu built in: osu!review now downloads tosu once and runs it quietly in the background – pp from osu!lazer's calculator live and the failed-play detection work without installing anything. Already running your own tosu? Then that one is used. Can be turned off in Settings → pp.",
+      "Fixed: the window could freeze when a new score brought it to the front (same kind of problem as the grey window in beta.3)."
     ]
   }
 }

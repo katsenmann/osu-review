@@ -39,6 +39,7 @@ from core.shell import Shell
 from core.osuapi import OsuApi
 from core.tosu import TosuBridge
 from core.lazercalc import LazerCalc, build_job
+from core.tosu_manager import TosuManager
 from core.updater import Updater
 from core.tray import Tray
 
@@ -79,6 +80,9 @@ DEFAULTS = {
     "viewer_fps": 0,         # 0 = monitor refresh rate
     "viewer_interp": True,
     "otd_hz_always": False,
+    "auto_save_fail": False,   # osu!stable: press F2 on the game over screen so failed plays get a replay
+    "tosu_auto": True,         # download tosu once and run it in the background (Windows)
+    "tab_map": {"on": True, "op": 0.6},   # replay: draw the map on the tablet view
     "vol_music": 0.6,
     "vol_hits": 0.7,
     "vol_mute": False,
@@ -88,6 +92,36 @@ DEFAULTS = {
     "ui_theme": {},          # client design (colours, glass, font, density, sidebar)
     "hud": {},               # HUD layout / style
 }
+
+
+def on_failed_play(info):
+    """tosu saw the health run out: on osu!stable press F2 on the game over screen -> the replay is exported."""
+    if not S.cfg.get("auto_save_fail"):
+        return
+    if (info.get("client") or "stable") != "stable":
+        log("failed play – auto-save only works in osu!stable (lazer has its own save button)")
+        return
+    from core import keys
+    folder = os.path.join(S.cfg.get("stable_path") or "", "Replays")
+
+    def newest():
+        try:
+            return max((e.stat().st_mtime for e in os.scandir(folder) if e.name.lower().endswith(".osr")), default=0)
+        except OSError:
+            return 0
+    before = newest()
+    time.sleep(1.2)                       # let the game over menu appear
+    for attempt in range(3):              # the menu can take a moment - try again if no replay showed up
+        ok, msg = keys.press_f2_in_osu()
+        if not ok:
+            log(f"failed play – couldn't press F2: {msg}")
+            return
+        for _ in range(10):
+            time.sleep(0.25)
+            if newest() > before:
+                log(f"failed play – replay saved (F2, attempt {attempt + 1})")
+                return
+    log("failed play – pressed F2 but no replay appeared in the Replays folder")
 
 
 def log(*a):
@@ -1362,7 +1396,8 @@ class Handler(BaseHTTPRequestHandler):
                     or (bool(S.cfg["otd_path"]) and os.path.isfile(S.cfg["otd_path"]))
                 return self._send(200, {"cfg": S.cfg, "paths": S.paths_status, "osu_offsets": osu_offsets(), "index": S.index.status, "index_secs": S.index.secs,
                                         "indexed": len(S.index.by_md5), "data_dir": DATA,
-                                        "shell": S.shell.status()})
+                                        "shell": S.shell.status(),
+                                        "tosu_mgr": S.tosu_mgr.status() if getattr(S, "tosu_mgr", None) else None})
             return self._send(404, {"error": "not found"})
         except FileNotFoundError:
             return self._send(404, {"error": "not found"})
@@ -1397,7 +1432,12 @@ class Handler(BaseHTTPRequestHandler):
                 S.otd.always = bool(S.cfg.get("otd_hz_always"))
                 S.osuapi.configure(S.cfg.get("osu_client_id"), S.cfg.get("osu_client_secret"))
                 S.tosu.set_url(S.cfg.get("tosu_url"))
-                if set(new) - {"osu_client_id", "osu_client_secret", "tosu_url"} - {"skin", "viewer_fps", "viewer_interp", "tablet_w", "tablet_h", "otd_hz_always",
+                if "tosu_auto" in new and getattr(S, "tosu_mgr", None):
+                    if new["tosu_auto"] and S.tosu_mgr.state in ("off", "error"):
+                        S.tosu_mgr.start_async()
+                    elif not new["tosu_auto"] and S.tosu_mgr.state == "running":
+                        threading.Thread(target=S.tosu_mgr.stop, daemon=True).start()
+                if set(new) - {"osu_client_id", "osu_client_secret", "tosu_url"} - {"skin", "viewer_fps", "viewer_interp", "tablet_w", "tablet_h", "otd_hz_always", "tab_map", "auto_save_fail", "tosu_auto",
                                    "vol_music", "vol_hits", "vol_mute", "audio_offset", "render", "video_dir", "hud", "ui_theme"}:
                     S.watchers_built = False
                 else:
@@ -1611,6 +1651,8 @@ def quit_app():
     """Ends osu!review completely (window, tray icon, background part)."""
     log("quit")
     S.shell.quit = True
+    if getattr(S, "tosu_mgr", None):
+        threading.Thread(target=S.tosu_mgr.stop, daemon=True).start()
     if getattr(S, "tray", None):
         S.tray.remove()
     threading.Timer(1.2, lambda: os._exit(0)).start()
@@ -1629,6 +1671,8 @@ def tray_check_updates():
 
 def restart_self():
     log("Python files changed – restarting …")
+    if getattr(S, "tosu_mgr", None):
+        S.tosu_mgr.stop()
     if getattr(S, "tray", None):
         S.tray.remove()
     args = [sys.executable, os.path.join(HERE, "app.py"), "--no-window", "--restarted"]
@@ -1710,6 +1754,10 @@ def main():
     S.shell = Shell(HERE, DATA, log)
     S.shell.fallback = lambda: open_ui(_no_shell=True)
     S.tosu = TosuBridge(DATA, log, S.cfg.get("tosu_url") or "http://127.0.0.1:24050")
+    S.tosu.on_fail = on_failed_play
+    S.tosu_mgr = TosuManager(DATA, log)
+    if S.cfg.get("tosu_auto", True):
+        S.tosu_mgr.start_async()
     S.osuapi = OsuApi()
     S.osuapi.configure(S.cfg.get("osu_client_id"), S.cfg.get("osu_client_secret"))
     if S.cfg["popup"] == "app":
