@@ -350,7 +350,7 @@ input[type=range]{transition:filter .2s}input[type=range]:active{filter:drop-sha
 .home{padding:34px 36px 40px;max-width:1180px}
 .home h2{font-size:30px;margin:0 0 4px}.home h2 span{color:var(--accent)}
 .home .lead{color:var(--ink2);margin-bottom:22px}
-.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px}
 .mode{position:relative;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 20px 18px;overflow:hidden;transition:transform .12s,border-color .12s;display:flex;flex-direction:column;gap:6px;min-height:190px}
 .mode{transition:transform .45s var(--ease),border-color .35s var(--ease),box-shadow .45s var(--ease)!important;will-change:transform}
 .mode:hover{transform:translateY(-6px) scale(1.015);border-color:color-mix(in srgb,var(--accent) 67%,transparent);box-shadow:0 18px 40px -18px color-mix(in srgb,var(--accent) 40%,transparent),0 0 0 1px color-mix(in srgb,var(--accent) 27%,transparent),0 0 34px -6px color-mix(in srgb,var(--accent) 33%,transparent)}
@@ -566,7 +566,7 @@ label.srow{cursor:pointer}
 .stiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .stile{text-align:left;border:1px solid var(--line);background:var(--panel2);border-radius:calc(var(--r) - 2px);padding:12px;display:flex;flex-direction:column;gap:2px;position:relative;transition:transform .25s var(--ease),border-color .2s}
 .stile:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
-.stile .d{width:9px;height:9px;border-radius:50%;margin-bottom:6px}.stile.ok .d{background:#4ade80;box-shadow:0 0 8px #4ade80}.stile.bad .d{background:#ff6b81;box-shadow:0 0 8px #ff6b81}
+.stile .d{width:9px;height:9px;border-radius:50%;margin-bottom:6px}.stile.ok .d{background:#4ade80;box-shadow:0 0 8px #4ade80}.stile.bad .d{background:#ff6b81;box-shadow:0 0 8px #ff6b81}.stile.opt .d{background:var(--ink3)}
 .stile b{font-size:13px}.stile small{font-size:11.5px;color:var(--ink3)}.stile.ok small{color:#86efac}
 .sinfo{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:14px}
 .sinfo div{background:var(--panel2);border-radius:calc(var(--r) - 2px);padding:10px 12px;min-width:0}
@@ -650,6 +650,29 @@ body.lockmini .sidetog{display:none}
 .lim[data-id]{cursor:pointer}.lim[data-id]:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
 .lim span{font-size:10.5px;color:var(--ink3)}.lim b{font-size:16px;font-variant-numeric:tabular-nums}.lim small{font-size:10.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #hwLim{width:100%;height:70px;display:block;margin-top:8px}
+.ovx #ovxPrev{width:100%;max-width:560px;aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;background:#2b2236;display:block;margin:0 auto 10px;position:sticky;top:0;z-index:2;box-shadow:0 8px 24px -12px #000}
+.ovx select,.ovx input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:5px 8px;font:inherit;font-size:12.5px;box-sizing:border-box}
+.ovxg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px 14px}
+.ovxf{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink2)}.ovxf>span{font-size:11.5px}
+.ovxf input[type=range]{width:100%}.ovxf input[type=color]{width:34px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.ovxc{display:none}.ovxc.on{display:flex}
+.ovxb{display:flex;flex-wrap:wrap;gap:6px}.ovxb .bk{display:flex;align-items:center;gap:4px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--ink)}
+.ovxb .bk button{border:0;background:none;color:var(--ink2);cursor:pointer;padding:0 3px;font-size:12px}
+#ovlPage{padding:24px 28px 40px;max-width:1500px;margin:0 auto}
+#ovlPage .ovlhd{display:flex;align-items:flex-end;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+#ovlPage .ovlhd h2{margin:0;font-size:22px}#ovlPage .ovlhd p{margin:4px 0 0;color:var(--ink2);font-size:13px;max-width:640px}
+#ovlPage .ovlhd .sp{flex:1}#ovlPage .ovlhd .dirty{font-size:12px;color:var(--ink3)}
+#ovlPage .ssec{display:block!important}#ovlPage .ssec>.sh{display:none}
+#ovlPage .ovx{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,1fr);gap:12px 22px;align-items:start}
+#ovlPage .ovx>*{grid-column:2;min-width:0}
+#ovlPage .ovx>.ovxpv{grid-column:1;grid-row:1/span 30;position:sticky;top:12px}
+#ovlPage .ovxpv #ovxPrev{max-width:none;position:static;margin:0;width:100%}
+.ovxpv .ovxbar{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--ink2);flex-wrap:wrap}
+.ovxpv .ovxbar select{width:auto}
+#ovlPage .ovxg{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+@media (max-width:980px){#ovlPage .ovx{grid-template-columns:1fr}#ovlPage .ovx>*,#ovlPage .ovx>.ovxpv{grid-column:1;grid-row:auto;position:static}}
+.offl{font-size:.8em;padding:0 5px;border-radius:5px;background:var(--line,#ffffff14);color:var(--ink3);margin-left:2px}
+.ovxchk{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px}.ovxh{margin:16px 0 4px;font-size:13px}
 </style>
 </head>
 <body>
@@ -659,7 +682,7 @@ body.lockmini .sidetog{display:none}
     <div class="brand" id="brand"><div class="logo">!</div><h1>osu!<span>review</span></h1><button class="sidetog" id="sideTog" title="Seitenleiste">‹</button></div>
     <button class="cmdbtn" id="cmdBtn"><span data-i18n="cmdSearch"></span><kbd>Strg K</kbd></button>
     <div class="status" id="status"></div>
-    <div class="nav" id="nav"><button data-view="home" data-ic="⌂" title="Start">⌂</button><button data-view="scores" data-ic="◎" class="on" data-i18n="navScores"></button><button data-view="studio" data-ic="▶" data-i18n="navStudio"></button><button data-view="tablet" data-ic="▭" data-i18n="navTablet"></button></div>
+    <div class="nav" id="nav"><button data-view="home" data-ic="⌂" title="Start">⌂</button><button data-view="scores" data-ic="◎" class="on" data-i18n="navScores"></button><button data-view="studio" data-ic="▶" data-i18n="navStudio"></button><button data-view="tablet" data-ic="▭" data-i18n="navTablet"></button><button data-view="overlay" data-ic="▣" data-i18n="navOverlay"></button></div>
     <div class="list" id="list"></div>
     <div class="drop" id="drop" data-i18n="drop"></div>
     <div class="side-foot">
@@ -674,6 +697,7 @@ body.lockmini .sidetog{display:none}
       <h2 style="margin:0 0 6px" data-i18n="waitTitle"></h2>
       <div data-i18n="waitText"></div></div></div>
     <div id="view" style="display:none"></div>
+    <div id="ovlPage" style="display:none"></div>
   </main>
 </div>
 <div class="tip" id="tip"></div>
@@ -693,6 +717,7 @@ body.lockmini .sidetog{display:none}
     <button data-sec="pp"><i>★</i><span data-i18n="secPp"></span><em data-dot="pp"></em></button>
     <button data-sec="tab"><i>▭</i><span data-i18n="secTab"></span><em data-dot="tab"></em></button>
     <button data-sec="rw"><i>⟲</i><span data-i18n="secRw"></span><em data-dot="rw"></em></button>
+    <button data-sec="ovl"><i>▣</i><span data-i18n="secOvl"></span></button>
     <div class="sver" id="sver"></div>
   </nav>
   <div class="sbody">
@@ -721,7 +746,7 @@ body.lockmini .sidetog{display:none}
     </section>
     <section class="ssec" data-sec="pp">
       <div class="sh"><h3 data-i18n="secPp"></h3><p data-i18n="secPpD"></p></div>
-      <div class="sflow"><span class="fl" data-fl="api">1 · osu! API</span><span class="ar">→</span><span class="fl" data-fl="tosu">2 · tosu</span><span class="ar">→</span><span class="fl" data-fl="lazer">3 · osu!lazer calculator</span><span class="ar">→</span><span class="fl on">4 · rosu-pp</span></div>
+      <div class="sflow"><span class="fl" data-fl="api">1 · osu! API <small style="opacity:.7">(optional)</small></span><span class="ar">→</span><span class="fl" data-fl="tosu">2 · tosu</span><span class="ar">→</span><span class="fl" data-fl="lazer">3 · osu!lazer calculator</span><span class="ar">→</span><span class="fl on">4 · rosu-pp</span></div>
       <div class="srow"><div class="sl"><b>osu!lazer pp calculator</b><small>The same calculator tosu uses, with the current pp formulas. Downloaded once (~60 MB), checked for updates every few days. Works without tosu running.</small></div><span class="badge" id="lzState"></span></div>
       <label class="srow"><div class="sl"><b data-i18n="tosuAuto"></b><small><span data-i18n="tosuAutoD"></span> <span id="tosuMgr" style="color:var(--ink)"></span></small></div><span class="sw"><input type="checkbox" id="s_tosu_auto"><i></i></span></label>
       <div class="srow col"><div class="sl"><b data-i18n="fTosu"></b></div><span class="badge" data-st="tosu"></span><input type="text" id="s_tosu_url" spellcheck="false" placeholder="auto"></div>
@@ -740,6 +765,44 @@ body.lockmini .sidetog{display:none}
       <label class="srow"><div class="sl"><b data-i18n="rwHandoff"></b></div><span class="sw"><input type="checkbox" id="s_rewind_handoff"><i></i></span></label>
       <div class="srow col"><div class="sl"><b data-i18n="rwFolder"></b></div><span class="badge" data-st="rewind_folder"></span><input type="text" id="s_rewind_folder" spellcheck="false" placeholder="auto"></div>
       <div class="srow col"><div class="sl"><b data-i18n="rwExe"></b></div><span class="badge" data-st="rewind_exe"></span><input type="text" id="s_rewind_exe" spellcheck="false" placeholder="auto"></div>
+    </section>
+    <section class="ssec" data-sec="ovl">
+      <div class="sh"><h3 data-i18n="secOvl"></h3><p data-i18n="secOvlD"></p></div>
+      <div class="ovx">
+        <iframe id="ovxPrev" title="Overlay preview" src="about:blank"></iframe>
+        <div class="ovxg">
+          <label class="ovxf"><span data-i18n="ovxPreset"></span><select id="ovx_preset"></select></label>
+          <label class="ovxf"><span data-i18n="ovxCmp"></span><select id="ovx_cmp"><option value="mods" data-i18n="ovxCmpMods"></option><option value="any" data-i18n="ovxCmpAny"></option></select></label>
+          <label class="ovxf"><span data-i18n="ovxPos"></span><select id="ovx_pos"><option value="auto" data-i18n="ovxPosAuto"></option><option value="gap" data-i18n="ovxPosGap"></option><option value="top" data-i18n="ovxPosTop"></option><option value="custom" data-i18n="ovxPosCustom"></option></select></label>
+          <div class="ovxf ovxc" id="ovxCust"><span>x / y %</span><div style="display:flex;gap:6px"><input type="range" id="ovx_px" min="0" max="100" step="1"><input type="range" id="ovx_py" min="0" max="95" step="1"></div></div>
+          <div class="ovxf"><span data-i18n="ovxColors"></span><div style="display:flex;gap:8px;align-items:center"><input type="color" id="ovx_ac" title="accent"><input type="color" id="ovx_bg" title="background"><input type="color" id="ovx_tx" title="text"><select id="ovx_ud" title="better / worse"><option value="g">▲ green ▼ red</option><option value="b">▲ blue ▼ orange</option><option value="a">▲ accent ▼ gray</option></select></div></div>
+          <label class="ovxf"><span data-i18n="ovxOp"></span><input type="range" id="ovx_op" min="20" max="100" step="5"></label>
+          <label class="ovxf"><span data-i18n="ovxSize"></span><input type="range" id="ovx_sz" min="60" max="160" step="5"></label>
+          <label class="ovxf"><span data-i18n="ovxWidth"></span><input type="range" id="ovx_wd" min="160" max="360" step="10"></label>
+          <label class="ovxf"><span data-i18n="ovxRad"></span><input type="range" id="ovx_rad" min="0" max="24" step="1"></label>
+          <label class="ovxf"><span data-i18n="ovxBorder"></span><input type="range" id="ovx_bw" min="0" max="4" step="1"></label>
+          <label class="ovxf"><span data-i18n="ovxSty"></span><select id="ovx_sty"><option value="modern">Modern (map banner, rings, curves)</option><option value="classic">Classic (flat)</option></select></label>
+          <label class="ovxf"><span data-i18n="ovxFont"></span><select id="ovx_ff"><option value="sans">Clean sans</option><option value="round">Rounded</option><option value="mono">Monospace</option><option value="serif">Serif</option></select></label>
+          <label class="ovxf"><span data-i18n="ovxTitle"></span><input type="text" id="ovx_tt" maxlength="30"></label>
+          <label class="ovxf"><span data-i18n="ovxChart"></span><select id="ovx_cs"><option value="bars">bars</option><option value="line">line</option><option value="dots">dots</option></select></label>
+          <label class="ovxf"><span data-i18n="ovxPlays"></span><input type="range" id="ovx_np" min="3" max="15" step="1"></label>
+          <label class="ovxf"><span data-i18n="ovxLayout"></span><select id="ovx_lay"><option value="col" data-i18n="ovxStack"></option><option value="row" data-i18n="ovxSide"></option></select></label>
+          <label class="ovxf"><span data-i18n="ovxAnim"></span><select id="ovx_anim"><option value="fade">fade</option><option value="slide">slide</option><option value="none">none</option></select></label>
+        </div>
+        <div class="ovxf" style="margin-top:8px"><span data-i18n="ovxBlocks"></span><div id="ovxBlocks" class="ovxb"></div></div>
+        <div class="ovxchk">
+          <label class="chk"><input type="checkbox" id="ovx_hdr"> <span data-i18n="ovxHdr"></span></label>
+          <label class="chk"><input type="checkbox" id="ovx_glass"> <span data-i18n="ovxGlass"></span></label>
+          <label class="chk"><input type="checkbox" id="ovx_only_select"> <span data-i18n="ovxOnlySel"></span></label>
+          <label class="chk"><input type="checkbox" id="ovx_hide_unplayed"> <span data-i18n="ovxHideUnpl"></span></label>
+        </div>
+        <div class="sbtns" style="margin-top:6px"><button class="btn" id="ovxExport" data-i18n="ovxExport"></button><button class="btn" id="ovxImport" data-i18n="ovxImport"></button><button class="btn" id="ovxReset" data-i18n="ovxReset"></button></div>
+        <h4 class="ovxh" data-i18n="ovxWhere"></h4>
+        <div class="srow col"><div class="sl"><b data-i18n="ovxObs"></b><small data-i18n="ovxObsD"></small></div><div style="display:flex;gap:6px"><input type="text" readonly id="ovxUrl" value="http://127.0.0.1:47290/overlay" style="flex:1"><button class="btn" id="ovxCopy" data-i18n="ovxCopy"></button></div></div>
+        <label class="srow"><div class="sl"><b data-i18n="ovxWin"></b><small data-i18n="ovxWinD"></small></div><span class="sw"><input type="checkbox" id="ovx_window"><i></i></span></label>
+        <label class="srow"><div class="sl"><b data-i18n="ovxWinTop"></b><small data-i18n="ovxWinTopD"></small></div><span class="sw"><input type="checkbox" id="ovx_window_top"><i></i></span></label>
+        <label class="srow"><div class="sl"><b data-i18n="ovxIngame"></b><small data-i18n="ovxIngameD"></small></div><span class="sw"><input type="checkbox" id="ovx_ingame"><i></i></span></label>
+      </div>
     </section>
     <div class="sfoot"><span id="sDirty"></span><button class="btn" id="btnClose" data-i18n="cancel"></button><button class="btn primary" id="btnSave" data-i18n="save"></button></div>
   </div>
@@ -777,6 +840,17 @@ const I18N = {
   settings:"Settings", language:"Language", langAuto:"Automatic (system language)", fStable:"osu! stable folder", fSongs:"Songs folder (stable)", fLazer:"osu!lazer data folder",
   fSkins:"Skins folder (stable, usually osu!\\Skins)", watchStable:"Watch stable", watchLazer:"Watch lazer", onNew:"On new score",
   autoFail:"Save failed plays automatically (osu!stable)", autoFailD:"When you fail, osu!review presses F2 on the game over screen so the replay is saved and analysed. Uses tosu (osu!review starts it for you). osu!lazer: use the save button on the fail screen.",
+  secOvl:"Overlay", secOvlD:"Your local plays of the map you've selected in osu! – shown in song select. Make it look the way you like.",
+  ovxPreset:"Start from", ovxCmp:"Compare with", ovxCmpMods:"Plays with the same mods", ovxCmpAny:"All plays on this difficulty", ovxPos:"Position",
+  ovxPosAuto:"Auto – middle, compact if there's no room", ovxPosGap:"Always the middle", ovxPosTop:"Top centre", ovxPosCustom:"Custom",
+  ovxColors:"Accent · background · text", ovxOp:"Opacity", ovxSize:"Size", ovxWidth:"Width", ovxRad:"Corners", ovxBorder:"Border", ovxFont:"Font", ovxTitle:"Title",
+  ovxChart:"Chart style", ovxSty:"Style", ovxPlays:"Plays in charts", ovxLayout:"Blocks", ovxStack:"stacked", ovxSide:"side by side", ovxAnim:"Appear",
+  ovxBlocks:"Blocks – tick, order with the arrows", ovxHdr:"Title bar", ovxGlass:"Frosted glass", ovxOnlySel:"Only in song select (hide while playing)", ovxHideUnpl:"Hide on maps you never played",
+  ovxExport:"Copy design", ovxImport:"Paste design", ovxReset:"Reset", ovxExported:"Design copied – share it anywhere", ovxImported:"Design applied", ovxBad:"That isn't an osu!review design",
+  ovxWhere:"Where it shows", ovxObs:"OBS / browser", ovxObsD:"Add as a browser source in OBS (set it to your osu! resolution) or open it in any browser.", ovxCopy:"Copy",
+  ovxWin:"Small window", ovxWinD:"An extra osu!review window with the overlay – handy on a second monitor.", ovxWinTop:"Keep the small window on top", ovxWinTopD:"Don't use this over fullscreen osu! – it can kick osu! out of fullscreen.",
+  ovxIngame:"In osu! (tosu in-game overlay)", ovxIngameD:"Shows it inside osu! through tosu's in-game overlay; then add “osu!review” in tosu's overlay settings (Ctrl+Shift+Space in osu!). tosu hooks into the game for this – widely used, but not officially approved by osu!. Use at your own risk.",
+  ovbBest:"Bests", ovbTrend:"Misses per play", ovbCmp:"Last vs. previous", ovbSpot:"Trouble spot", ovbTable:"Play table", ovbStrip:"One-line summary", ovbForm:"Your form & session", ovbFc:"If you FC (pp)",
   tosuAuto:"Run tosu automatically", tosuAutoD:"osu!review downloads tosu once (~50 MB) and runs it quietly in the background – for pp and to notice failed plays. Nothing to install yourself.",
   tmRun:"· running ({v})", tmExt:"· using your own tosu", tmDl:"· downloading …", tmErr:"· problem: {e}", tmOff:"· off",
   tsMap:"Map on tablet", tsMapOp:"opacity", tsLegMap:"map",
@@ -809,8 +883,8 @@ const I18N = {
   hTitle:"Customize HUD", hSub:"Applies to the replay here and to videos. Arrows = position on screen.", hStyle:"Style", hAccent:"Color", hScale:"Size", hOpacity:"Opacity", hReset:"Reset",
   hudBtn:"🎛 HUD", hudEdit:"Customize HUD", rHud:"Burn the osu!review HUD into the video (PP, 300/100/50, UR, …)", rHudOff:"HUD offset", rS_hud:"Burning HUD into the video…", ppLoading:"calculating…",
   rBtn:"🎬 Render as video", rTitle:"Render replay as video", rSub:"Using danser-go – high resolution, high FPS, motion blur, your skin, song + hitsounds. The first time, osu!review downloads danser automatically (about 100 MB).",
-  rP_yt1080:"YouTube 1080p60", rP_yt1440:"YouTube 1440p60", rP_yt2160:"YouTube 4K60", rP_hfr1080:"1080p 120 FPS", rP_fast720:"Fast 720p60", rP_custom:"Custom",
-  rMB:"Motion blur", rMBoff:"off", rMBlow:"light", rMBmid:"medium", rMBhigh:"strong", rRes:"Resolution", rFps:"FPS", rEnc:"Encoder", rSkin:"Skin", rVol:"Volume (from the player)",
+  rP_yt1080:"YouTube 1080p60", rP_yt1440:"YouTube 1440p60", rP_yt2160:"YouTube 4K60", rP_hfr1080:"1080p 120 FPS", rP_smooth1080:"Smooth 1080p60", rP_fast720:"Fast 720p60", rP_custom:"Custom",
+  rMB:"Motion blur", rMBoff:"off", rMBlow:"light", rMBmid:"medium", rMBhigh:"strong", rMBmax:"very smooth", rRes:"Resolution", rFps:"FPS", rEnc:"Encoder", rSkin:"Skin", rVol:"Volume (from the player)",
   rEncNv:"NVIDIA (fast, recommended)", rEncNvH:"NVIDIA HEVC (smaller file)", rEncCpu:"CPU x264 (slow, works everywhere)", rEncAmd:"AMD", rEncIntel:"Intel",
   rStart:"Start rendering", rWarnLazer:"Careful: this map isn't in your stable Songs folder – danser might not find it.", rOut:"Saved to",
   rS_queued:"Queued…", rS_downloading:"Downloading danser…", rS_installing:"Installing danser…", rS_starting:"Starting danser…", rS_importing:"danser is reading your maps (first time only, may take a while)…",
@@ -820,12 +894,12 @@ const I18N = {
   lvHz:"Report rate", lvNoPen:"Hold the pen near the tablet…", lvSess:"avg {avg} Hz · min {min} · max {max} (last 10 min)", lvPress:"Pressure", lvPos:"Pen", lvIn:"inside the area", lvOut:"outside the area",
   lvAlways:"Also measure Hz while playing (save per score)", lvAlwaysHint:"Keeps OTD's debug mode on for that – costs OTD a bit of performance.", lvReports:"{n} reports received", lvVer:"OTD {v}", lvDig:"Digitizer {w} × {h} mm · {mx} × {my} units",
   tSizeOtd:"live from OTD", scoreHz:"Tablet Hz", scoreHzD:"during this score (min {min} / max {max})",
-  navScores:"Scores", navStudio:"🎬 Studio", navTablet:"Tablet",
+  navScores:"Scores", offline:"offline", you:"You", navStudio:"🎬 Studio", navTablet:"Tablet", navOverlay:"Overlay", ovxLive:"Live: your selected map", ovxRatio:"Screen", ovxSaved:"Overlay saved", ovxUnsaved:"unsaved changes",
   tsTitle:"Tablet on this map", tsHint:"What your pen did during this score – with the area that was active in OpenTabletDriver while playing.", tsForeign:"This is a replay by {n}. Your tablet area says nothing about other players' scores, so there are no tablet stats here.", tsNone:"No tablet data for this score (OpenTabletDriver wasn't running during analysis or the area is missing).",
   tsArea:"Area", tsUsed:"Area used", tsUsedD:"{p}% of the area · playfield {w} × {h} mm", tsTravel:"Pen travel", tsTravelD:"total on the tablet", tsSpeed:"Pen speed", tsSpeedD:"avg · peak {m} mm/s", tsJump:"Avg jump", tsJumpD:"{o} per jump {d}", tsSpread:"Spread", tsSpreadD:"around the circle center", tsHz:"Report rate", tsHzD:"min {min} · max {max}", tsHzNo:"not measured", tsHzNoD:"tick “measure Hz while playing” in the Tablet tab", tsEdge:"At the edge", tsEdgeD:"of the time at the screen edge", tsFilters:"Filters",
   hmLead:"What do you want to do?", hmLive:"Live analysis", hmLiveD:"Just play osu! – after every score the analysis opens automatically: misses with reasons, hit error, aim, frame by frame.", hmLiveWait:"waiting for your next score", hmLiveLast:"Latest: {t}",
   hmStudio:"Studio & rendering", hmStudioD:"Replay as video: preview, HUD with pp counter and key overlay, motion blur, up to 4K.", hmStudioIdle:"ready", hmStudioBusy:"rendering: {p}%",
-  hmTablet:"Tablet & area", hmTabletD:"Your area live from OpenTabletDriver, report rate, aim evaluation and suggestions.", hmTabOn:"{n} · {w} × {h} mm", hmTabOff:"OpenTabletDriver not connected",
+  hmOverlay:"Song-select overlay", hmOverlayD:"Your local plays, form and if-FC pp next to osu!'s song select – in-game, in OBS or as a small window.", hmOvIngame:"in-game", hmOvWin:"window", hmTablet:"Tablet & area", hmTabletD:"Your area live from OpenTabletDriver, report rate, aim evaluation and suggestions.", hmTabOn:"{n} · {w} × {h} mm", hmTabOff:"OpenTabletDriver not connected",
   hmRecent:"Recent scores", hmNone:"No scores yet – play a map or drop an .osr file into the window.", hmAnalyze:"Analysis", hmRender:"Studio", hmScores:"Scores", hmAvgAcc:"Avg accuracy", hmBestPP:"Best pp", hmAvgUR:"Avg UR", hmMaps:"Beatmaps",
   st1:"Settings", st1h:"everything that ends up in the video", st2:"Preview", st2h:"shows your settings instantly – for the real danser look use “danser preview” below", st3:"Render",
   stSkinC:"Skin & cursor", stAud:"Volume", stBg:"Background", stObj:"Objects", stDz:"danser elements", stDzOwn:"PP, hits, combo, keys and hit error come from your HUD below. Turn off “Burn HUD” to pick danser's own elements here.",
@@ -867,7 +941,7 @@ const I18N = {
   rLate:"Too late", rLateD:"Click came {n}ms after the object.",
   rAway:"Cursor away", rAwayD:"Cursor was {px}px away ({dir}), nowhere near.",
 pTosu:"tosu", fTosu:"tosu address (pp from tosu while it runs)", tosuPill:"If tosu runs while you play, osu!review takes its pp (real osu!lazer calculator) including the live course.",
-  ppTosuT:"pp from tosu – calculated with the real osu!lazer calculator, exactly like your tosu overlay", apiTitle:"Real pp from osu!", apiHint:"Optional: with a free osu! OAuth app the client shows the exact pp osu! gives for submitted scores. Create it at osu.ppy.sh → Settings → OAuth → “New OAuth Application” (any name, leave the callback URL empty) → paste client ID and secret here.",
+  ppTosuT:"pp from tosu – calculated with the real osu!lazer calculator, exactly like your tosu overlay", apiTitle:"Official pp from the osu! servers (optional)", apiHint:"Not needed – pp already come from tosu / the osu!lazer calculator, which give the same numbers in almost every case. A key only adds the server's own value for submitted scores (e.g. right after a pp rework) and whether a score is ranked. Your key stays on this PC (encrypted) and is only used to read public data. To add one: create it at osu.ppy.sh → Settings → OAuth → “New OAuth Application” (any name, leave the callback URL empty) → paste client ID and secret here.",
   apiTest:"Test", apiOk:"Connection to osu! works", ppCalc:"calculated", ppCalcT:"Calculated locally with rosu-pp (pp formulas from Oct 2025, can differ a bit from tosu/osu!). The exact osu!lazer calculator downloads in the background and is used once it is ready.",
   ppOsuT:"Official pp value from osu! for exactly this score", ppUnr:"no pp", ppUnrT:"osu! gives no pp for this map (not ranked) – showing the calculated value.", ppCalcIs:"calculated {v}",
   daTitle:"danser settings", daSub:"fine-tuning for the video – applies to preview and video", daSimple:"Simple", daExpert:"All danser options (advanced)",
@@ -966,6 +1040,9 @@ const APL=()=>plays.filter(p=>p.in_analysis!==false), RPL=()=>plays.filter(p=>p.
 let LISTMODE=null;
 async function loadList(){
   plays = (await api("/api/plays")).filter(p=>!PEND.has(p.id));
+  // plays made while logged out (no name / "Guest") count as yours: same stats, shown with "offline"
+  { const c={}; plays.forEach(p=>{ if(!p.offline&&p.player) c[p.player]=(c[p.player]||0)+1; });
+    const me=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]; plays.forEach(p=>{ if(p.offline){ p.player=me?me[0]:T("you"); p.offlineTag=true; } }); }
   renderList();
 }
 function renderList(){
@@ -977,7 +1054,7 @@ function renderList(){
     <button class="item ${cur&&cur.id===p.id?"sel":""}" data-id="${p.id}"><span class="rfx" data-x="${p.id}" title="${T(studio?"rfRemove":"delTip")}">✕</span>
       ${newIds.has(p.id)?'<span class="new">NEW</span>':""}
       <div class="t">${esc(p.title || T("unknownMap"))}</div>
-      <div class="v">[${esc(p.version || "?")}] · ${esc(p.player)} · ${ago(p.added)}</div>
+      <div class="v">[${esc(p.version || "?")}] · ${esc(p.player)}${p.offlineTag?` <span class="offl">${T("offline")}</span>`:""} · ${ago(p.added)}</div>
       <div class="m"><b style="color:var(--ink)">${p.acc.toFixed(2)}%</b>
         <span style="color:${p.miss?"#ff8097":"var(--ink2)"}">${p.miss}✕</span>
         ${p.pp!=null?`<span style="color:var(--accent);font-weight:700">${Math.round(p.pp)}pp</span>`:""}${p.stars?`<span>${p.stars.toFixed(2)}★</span>`:""}
@@ -1153,7 +1230,7 @@ function render(p){
       <span>${r.timestamp?new Date(r.timestamp).toLocaleString(T("locale")):""}</span></div>
     <h2>${esc(bm?.title || T("unknownMap"))}</h2>
     <div class="sub">${bm?`${esc(bm.artist||"")} · <b>[${esc(bm.version||"?")}]</b> · ${T("mappedBy")} ${esc(bm.creator||"?")}`:`${T("mapHash")} ${esc((r.beatmap_md5||"").slice(0,12))}…`}
-      · ${T("playedBy")} <b>${esc(r.player)}</b>
+      · ${T("playedBy")} <b>${esc(pName(r.player))}</b>
       ${r.mods_str.length?`<span class="mods">${r.mods_str.map(m=>`<span class="mod">${m}</span>`).join("")}</span>`:""}</div>
     <div class="big">
       <div class="stat"><div class="k">${T("accuracy")}</div><div class="n">${r.accuracy.toFixed(2)}<small>%</small></div></div>
@@ -2402,9 +2479,15 @@ function limitsWidget(){
     </div><canvas id="hwLim"></canvas>
     <div class="htip">💡 ${tip}</div></div>`;
 }
+// small charts that draw themselves at their current size: redraw when that size changes
+// (window resized, other aspect ratio, sidebar) instead of letting the browser stretch the old picture
+const _autoRO=new ResizeObserver(es=>{ for(const e of es){ const c=e.target; if(!c._redraw||!c.isConnected) continue;
+  const w=Math.round(c.clientWidth), h=Math.round(c.clientHeight); if(w&&h&&(w!==c._sz[0]||h!==c._sz[1])){ clearTimeout(c._rt); c._rt=setTimeout(()=>{ try{ c._redraw(); }catch(_){} },60); } } });
+function autoSize(cv,fn){ cv._redraw=fn; cv._sz=[Math.round(cv.clientWidth),Math.round(cv.clientHeight)]; if(!cv._autoObs){ cv._autoObs=1; _autoRO.observe(cv); } }
 function drawLimits(){
   document.querySelectorAll(".lim[data-id]").forEach(b=>b.onclick=()=>select(b.dataset.id));
   const cv=$("#hwLim"); if(!cv) return; const me=homeMe(), P=APL().filter(p=>p.player===me&&p.pat).slice(0,30).reverse(); if(P.length<2){ cv.style.display="none"; return; }
+  autoSize(cv,drawLimits);
   const dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext("2d"); g.scale(dpr,dpr);
   const X=i=>8+i*(W-16)/(P.length-1);
   const line=(vals,col)=>{ const ok=vals.filter(v=>v!=null); if(ok.length<2) return; const lo=Math.min(...ok)*0.95, hi=Math.max(...ok)*1.03, Y=v=>H-14-(v-lo)/(hi-lo||1)*(H-24);
@@ -2421,6 +2504,10 @@ const OSU_IC={
     <text x="24" y="29.5" text-anchor="middle" font-size="15" font-weight="800" fill="#fff" font-family="Segoe UI,sans-serif">1</text></svg>`,
   studio:`<svg class="oic" viewBox="0 0 48 48" aria-hidden="true"><g class="blades">${[0,1,2,3,4,5].map(i=>`<path d="M24 4 A20 20 0 0 1 41.3 14 L30 20.5 Z" transform="rotate(${i*60} 24 24)" fill="color-mix(in srgb,var(--accent2) ${55+i*7}%,#000)" stroke="#0006" stroke-width=".6"/>`).join("")}</g>
     <circle cx="24" cy="24" r="20.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="24" cy="24" r="8" fill="#000a"/><path d="M21.5 19.8 L29 24 L21.5 28.2 Z" fill="#fff"/></svg>`,
+  overlay:`<svg class="oic" viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="8" width="42" height="30" rx="4" fill="#ffffff10" stroke="#ffffff55" stroke-width="1.6"/>
+    <rect x="30" y="12" width="11" height="7" rx="2" fill="#ffffff22"/><rect x="30" y="21" width="11" height="7" rx="2" fill="#ffffff22"/><rect x="30" y="30" width="11" height="5" rx="2" fill="#ffffff22"/>
+    <rect x="11" y="13" width="16" height="21" rx="3" fill="color-mix(in srgb,#ff66aa 35%,#000)" stroke="#ff66aa" stroke-width="1.6"/>
+    <circle cx="16" cy="19" r="3" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M13 28 C16 24,19 30,25 26" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M19 42 h10" stroke="#ffffff55" stroke-width="2" stroke-linecap="round"/></svg>`,
   tablet:`<svg class="oic" viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="11" width="38" height="27" rx="4" fill="#ffffff14" stroke="#ffffff55" stroke-width="1.6"/>
     <rect class="area" x="17" y="18" width="17" height="12" rx="1.5" fill="#5cc8ff22" stroke="#5cc8ff" stroke-width="1.6"/><circle cx="25.5" cy="24" r="3.2" fill="none" stroke="#fff" stroke-width="1.4" class="pdot"/>
     <g class="pen"><path d="M27 26 L42 8 L45.5 11 L30.5 29 Z" fill="#f2eefc"/><path d="M27 26 L30.5 29 L25.6 30.6 Z" fill="#5cc8ff"/></g></svg>`,
@@ -2515,8 +2602,80 @@ setTimeout(()=>updLoad(false),4000); setTimeout(()=>updLoad(false),25000); setIn
 document.addEventListener("click",e=>{ if(e.target&&e.target.id==="updCheck"){ e.target.disabled=true; e.target.textContent="Checking …"; updLoad(true).then(()=>{ e.target.disabled=false; e.target.textContent="Check now"; if(UPD&&UPD.available) updRender(true); }); } });
 
 
+
+/* ================================================================ settings: song-select overlay editor */
+const OVX_DEF={preset:"A",sty:"modern",ac:"#ff66aa",bg:"#14101e",tx:"#ece8f6",op:.95,ud:"g",rad:10,bw:1,sz:1,wd:250,ff:"sans",tt:"osu!review",hdr:true,np:8,cs:"bars",lay:"col",glass:false,
+  blocks:[{k:"best",on:true},{k:"trend",on:false},{k:"cmp",on:false},{k:"fc",on:true},{k:"form",on:true},{k:"spot",on:false},{k:"table",on:false},{k:"strip",on:false}],
+  cmp:"mods",pos:"auto",px:50,py:20,anim:"fade",only_select:true,hide_unplayed:false,obs:true,window:false,window_top:false,ingame:false};
+const OVX_PRE={
+  A:{n:"A · Stats card",blocks:["best","fc","form"]},
+  B:{n:"B · Minimal strip",blocks:["strip"],hdr:false,rad:20,wd:280},
+  C:{n:"C · Coach",blocks:["spot","trend","form"],tt:"Before you start"},
+  D:{n:"D · Compare table",blocks:["table"],tt:"Your plays",wd:280},
+  neon:{n:"Neon",blocks:["best","fc","trend","cmp"],ac:"#00f0ff",bg:"#05050a",tx:"#e6fbff",bw:2,rad:4,ud:"b",ff:"mono"},
+  glass:{n:"Frosted glass",blocks:["best","cmp"],ac:"#ffffff",bg:"#3a3550",op:.45,rad:18,glass:true},
+  classic:{n:"osu! classic",blocks:["best","trend"],bg:"#1c1c1c",tx:"#ffffff",rad:6,bw:0,ff:"round",tt:"Local stats"},
+  mono:{n:"Monochrome",blocks:["best","table"],ac:"#dddddd",bg:"#111111",tx:"#eeeeee",ud:"a",rad:0}};
+const OVX_KEEP=["cmp","pos","px","py","only_select","hide_unplayed","obs","window","window_top","ingame","anim"];
+let OVX=JSON.parse(JSON.stringify(OVX_DEF));
+const ovxBlockName=k=>T({best:"ovbBest",trend:"ovbTrend",cmp:"ovbCmp",spot:"ovbSpot",table:"ovbTable",strip:"ovbStrip",form:"ovbForm",fc:"ovbFc"}[k]);
+function ovxLoad(cfg){ OVX=JSON.parse(JSON.stringify(OVX_DEF)); Object.assign(OVX,JSON.parse(JSON.stringify(cfg||{})));
+  const ks=OVX.blocks.map(b=>b.k); OVX_DEF.blocks.forEach(b=>{ if(!ks.includes(b.k)) OVX.blocks.push({k:b.k,on:b.on&&OVX.preset!=="custom"}); });
+  const sel=$("#ovx_preset"); if(sel&&!sel.options.length) sel.innerHTML=Object.entries(OVX_PRE).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("")+`<option value="custom">Custom</option>`;
+  ovxSync(); }
+function ovxPreset(k){ const P=OVX_PRE[k]; if(!P) return; const keep={}; OVX_KEEP.forEach(x=>keep[x]=OVX[x]);
+  OVX=JSON.parse(JSON.stringify(OVX_DEF)); Object.assign(OVX,P,keep,{preset:k}); delete OVX.n;
+  OVX.blocks=OVX_DEF.blocks.map(b=>({k:b.k,on:P.blocks.includes(b.k)})).sort((a,b)=>(P.blocks.indexOf(a.k)+1||99)-(P.blocks.indexOf(b.k)+1||99)); ovxSync(); }
+function ovxSync(){ const set=(id,v)=>{ const el=$("#ovx_"+id); if(!el) return; if(el.type==="checkbox") el.checked=!!v; else el.value=v; };
+  ["preset","sty","cmp","pos","px","py","ac","bg","tx","ud","wd","rad","bw","ff","tt","cs","np","lay","anim","hdr","glass","only_select","hide_unplayed","window","window_top","ingame"].forEach(k=>set(k,OVX[k]));
+  set("op",Math.round(OVX.op*100)); set("sz",Math.round(OVX.sz*100));
+  $("#ovxCust")?.classList.toggle("on",OVX.pos==="custom");
+  const B=$("#ovxBlocks"); if(B){ B.innerHTML=OVX.blocks.map((b,i)=>`<span class="bk"><input type="checkbox" data-bi="${i}" ${b.on?"checked":""}>${ovxBlockName(b.k)}<button data-bu="${i}" aria-label="up">◀</button><button data-bd="${i}" aria-label="down">▶</button></span>`).join("");
+    B.querySelectorAll("[data-bi]").forEach(c=>c.onchange=()=>{ OVX.blocks[+c.dataset.bi].on=c.checked; ovxCustom(); ovxPush(); });
+    B.querySelectorAll("[data-bu]").forEach(c=>c.onclick=e=>{ e.preventDefault(); const i=+c.dataset.bu; if(i>0){ [OVX.blocks[i-1],OVX.blocks[i]]=[OVX.blocks[i],OVX.blocks[i-1]]; ovxCustom(); ovxSync(); } });
+    B.querySelectorAll("[data-bd]").forEach(c=>c.onclick=e=>{ e.preventDefault(); const i=+c.dataset.bd; if(i<OVX.blocks.length-1){ [OVX.blocks[i+1],OVX.blocks[i]]=[OVX.blocks[i],OVX.blocks[i+1]]; ovxCustom(); ovxSync(); } }); }
+  ovxPush(); }
+/* ---- the Overlay tab: the editor lives on its own page */
+let _ovlBuilt=false, _ovxDirty=false;
+function ovxDirty(v){ _ovxDirty=v; const d=$("#ovlDirty"); if(d) d.textContent=v?T("ovxUnsaved"):""; }
+function ovlBuild(){ if(_ovlBuilt) return; const P=$("#ovlPage"), sec=document.querySelector('.ssec[data-sec="ovl"]'); if(!P||!sec) return; _ovlBuilt=true;
+  P.innerHTML=`<div class="ovlhd"><div><h2>${T("secOvl")}</h2><p>${T("secOvlD")}</p></div><span class="sp"></span><span class="dirty" id="ovlDirty"></span><button class="btn primary" id="ovlSave">${T("save")}</button></div>`;
+  P.appendChild(sec); const nb=document.querySelector('.snav [data-sec="ovl"]'); if(nb) nb.style.display="none";
+  const f=$("#ovxPrev"), wrap=document.createElement("div"); wrap.className="ovxpv"; f.parentNode.insertBefore(wrap,f); wrap.appendChild(f);
+  wrap.insertAdjacentHTML("beforeend",`<div class="ovxbar"><label class="chk"><input type="checkbox" id="ovlLive"> ${T("ovxLive")}</label><span style="flex:1"></span><span>${T("ovxRatio")}</span><select id="ovlRatio"><option value="16/9">16:9</option><option value="16/10">16:10</option><option value="4/3">4:3</option><option value="21/9">21:9</option></select></div>`);
+  $("#ovlRatio").onchange=e=>{ f.style.aspectRatio=e.target.value; };
+  $("#ovlLive").onchange=e=>{ f.src="/overlay?mode=preview"+(e.target.checked?"&live=1":""); };
+  $("#ovlSave").onclick=async()=>{ try{ await api("/api/settings",{method:"POST",body:JSON.stringify({overlay:JSON.parse(JSON.stringify(OVX))})}); ovxDirty(false); if(CFG) CFG.overlay=JSON.parse(JSON.stringify(OVX)); toast("✓ "+T("ovxSaved")); }catch(e){ toast("✗ "+e); } };
+  ["ovxReset","ovxImport"].forEach(id=>{ const b=$("#"+id); if(b) b.addEventListener("click",()=>ovxDirty(true)); });
+  const bl=$("#ovxBlocks"); if(bl) bl.addEventListener("click",e=>{ if(e.target.closest("button,input")) ovxDirty(true); });
+}
+async function ovlOpen(){ ovlBuild(); const P=$("#ovlPage"); if(P){ const h=P.querySelector(".ovlhd h2"); if(h) h.textContent=T("secOvl"); }
+  if(!_ovxDirty){ try{ const s=await api("/api/status"); ovxLoad(s.cfg.overlay); }catch(_){} }
+  const f=$("#ovxPrev"); if(f&&(f.src==="about:blank"||!f.src.includes("/overlay"))) f.src="/overlay?mode=preview"; else ovxPush(); }
+function ovxCustom(){ if(OVX.preset!=="custom"){ OVX.preset="custom"; const s=$("#ovx_preset"); if(s) s.value="custom"; } }
+function ovxPush(){ const f=$("#ovxPrev"); if(f&&f.contentWindow) try{ f.contentWindow.postMessage({osrOverlay:JSON.parse(JSON.stringify(OVX))},"*"); }catch(_){} }
+(()=>{ const M=$("#modal"); if(!M) return;
+  const look=["sty","ac","bg","tx","ud","wd","rad","bw","ff","tt","cs","np","lay","op","sz","hdr","glass"];
+  const OS=M.querySelector('.ssec[data-sec="ovl"]')||M;
+  OS.addEventListener("input",e=>{ const id=(e.target.id||""); if(!id.startsWith("ovx_")) return; const k=id.slice(4); ovxDirty(true);
+    if(k==="preset"){ ovxPreset(e.target.value); return; }
+    let v=e.target.type==="checkbox"?e.target.checked:e.target.value;
+    if(["wd","rad","bw","np","px","py"].includes(k)) v=+v; if(k==="op"||k==="sz") v=+v/100;
+    OVX[k]=v; if(look.includes(k)) ovxCustom(); if(k==="pos") $("#ovxCust")?.classList.toggle("on",v==="custom"); ovxPush(); });
+  addEventListener("message",e=>{ if(e.data&&e.data.osrOverlayReady) ovxPush(); });
+  const sec=M.querySelector('.snav [data-sec="ovl"]'); if(sec) sec.addEventListener("click",()=>{ const f=$("#ovxPrev"); if(f&&f.src==="about:blank") f.src="/overlay?mode=preview"; else ovxPush(); });
+  $("#ovxCopy").onclick=e=>{ e.preventDefault(); const i=$("#ovxUrl"); i.select(); try{ navigator.clipboard.writeText(i.value); }catch(_){ document.execCommand("copy"); } toast("✓ "+i.value); };
+  $("#ovxExport").onclick=e=>{ e.preventDefault(); const o={}; Object.keys(OVX).filter(k=>!OVX_KEEP.includes(k)).forEach(k=>o[k]=OVX[k]);
+    const txt="osu!review-overlay:"+btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+    try{ navigator.clipboard.writeText(txt); toast(T("ovxExported")); }catch(_){ prompt("",txt); } };
+  $("#ovxImport").onclick=async e=>{ e.preventDefault(); let txt=""; try{ txt=await navigator.clipboard.readText(); }catch(_){} if(!txt.startsWith("osu!review-overlay:")) txt=prompt(T("ovxImport"))||"";
+    try{ const o=JSON.parse(decodeURIComponent(escape(atob(txt.replace("osu!review-overlay:","").trim())))); const keep={}; OVX_KEEP.forEach(x=>keep[x]=OVX[x]);
+      const clean={}; Object.keys(OVX_DEF).forEach(k=>{ if(k in o&&!OVX_KEEP.includes(k)) clean[k]=o[k]; }); ovxLoad(Object.assign({},OVX,clean,keep)); toast(T("ovxImported")); }catch(_){ toast(T("ovxBad")); } };
+  $("#ovxReset").onclick=e=>{ e.preventDefault(); const keep={}; OVX_KEEP.forEach(x=>keep[x]=OVX[x]); ovxLoad(Object.assign({},OVX_DEF,keep)); };
+})();
+
 /* ================================================================ JS errors -> log.txt (for crash reports) */
-(()=>{ let n=0; const send=m=>{ if(n++>20) return; try{ fetch("/api/clientlog/line",{method:"POST",body:JSON.stringify({msg:String(m).slice(0,500)}),keepalive:true}); }catch(_){} };
+(()=>{ let n=0; const send=m=>{ if(window._shellMoved||n++>20) return; try{ fetch("/api/clientlog/line",{method:"POST",body:JSON.stringify({msg:String(m).slice(0,500)}),keepalive:true}); }catch(_){} };
   window.addEventListener("error",e=>{ if(/ResizeObserver loop/.test(e.message||"")) return; send(`JS error: ${e.message} @ ${(e.filename||"").split("/").pop().split("#")[0]}:${e.lineno}`); });
   window.addEventListener("unhandledrejection",e=>send(`JS promise: ${(e.reason&&(e.reason.stack||e.reason.message))||e.reason}`));
   setInterval(()=>{ const m=performance.memory; if(m&&m.usedJSHeapSize>1.2e9) send(`memory high: ${Math.round(m.usedJSHeapSize/1e6)} MB`); },60000); })();
@@ -2535,7 +2694,7 @@ document.addEventListener("click",e=>{ if(e.target&&e.target.id==="updCheck"){ e
 /* ================================================================ tablet page */
 /* ---- motion helpers */
 function syncList(){ const hide=VIEW!=="scores"&&VIEW!=="studio", b=document.body;
-  const app=$("#app"), mini=TH.side==="mini"||VIEW==="home"||VIEW==="tablet"; if(app&&app.classList.contains("mini")!==mini){ app.classList.toggle("mini",mini); setTimeout(navIndicator,480); } b.classList.toggle("nodrop",VIEW==="tablet"||VIEW==="home"); b.classList.toggle("lockmini",VIEW==="home"||VIEW==="tablet");
+  const app=$("#app"), mini=TH.side==="mini"||VIEW==="home"||VIEW==="tablet"||VIEW==="overlay"; if(app&&app.classList.contains("mini")!==mini){ app.classList.toggle("mini",mini); setTimeout(navIndicator,480); } b.classList.toggle("nodrop",VIEW==="tablet"||VIEW==="home"||VIEW==="overlay"); b.classList.toggle("lockmini",VIEW==="home"||VIEW==="tablet"||VIEW==="overlay");
   const mode=VIEW==="studio"?"render":"analysis"; if(!hide&&mode!==LISTMODE&&plays){ renderList(); const L=$("#list"); L.classList.remove("lin"); void L.offsetWidth; L.classList.add("lin"); } if(b.classList.contains("nolist")===hide) return;
   b.classList.toggle("nolist",hide); if(!hide){ const L=$("#list"); L.classList.remove("lin"); void L.offsetWidth; L.classList.add("lin"); } }
 function navIndicator(){ syncList(); const n=$("#nav"); if(!n) return; let ind=n.querySelector(".ind"); if(!ind){ ind=document.createElement("i"); ind.className="ind"; n.prepend(ind); }
@@ -2566,6 +2725,8 @@ window.addEventListener("resize",()=>navIndicator());
 
 function showView(v){
   VIEW=v; document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.view===v)); navIndicator(); _vtLast=0;
+  const OP=$("#ovlPage"); if(OP) OP.style.display=v==="overlay"?"block":"none";
+  if(v==="overlay"){ if(VW.raf) cancelAnimationFrame(VW.raf); VW.playing=false; stopSong(); document.body.classList.remove("theater-on"); $("#view").style.display="none"; $("#empty").style.display="none"; ovlOpen(); return; }
   if(v==="tablet"||v==="home"){ if(VW.raf) cancelAnimationFrame(VW.raf); VW.playing=false; stopSong(); document.body.classList.remove("theater-on"); v==="tablet"?renderTablet():renderHome(); }
   else if(v==="studio"){ const R=RPL(), c=cur&&R.find(p=>p.id===cur.id)?cur.id:(R[0]&&R[0].id);
     if(!c){ if(VW.raf) cancelAnimationFrame(VW.raf); VW.playing=false; stopSong(); studioEmpty(); } else if(cur&&cur.id===c) renderStudio(cur); else select(c); }
@@ -2664,6 +2825,7 @@ function overallCard(rep,sugg){
 }
 function drawOverall(rep){
   const cv=$("#ovSp"); if(!cv) return; const P=(rep.per_play||[]).filter(x=>x.over!=null&&x.j>=8).slice().reverse(); if(P.length<1) return;
+  autoSize(cv,()=>drawOverall(rep));
   const dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext("2d"); g.scale(dpr,dpr);
   const m=Math.max(6,...P.map(x=>Math.abs(x.over))), y=v=>H/2-v/m*(H/2-6), bw=Math.min(26,(W-10)/P.length*.7), X=i=>5+(i+.5)*(W-10)/P.length;
   g.strokeStyle="rgba(255,255,255,.15)"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
@@ -3137,7 +3299,7 @@ async function openRenderDialog(p){
            encoder:last.encoder||(gpu==="nvidia"?"nvenc_h264":"x264"), skin:SKIN.name||CFG.skin||"", hud:last.hud??true, hud_offset:last.hud_offset||0};
   const pres=Object.keys(RST.presets);
   const lazerOnly=p.beatmap&&p.beatmap.path&&CFG.songs_path&&!p.beatmap.path.toLowerCase().startsWith(CFG.songs_path.toLowerCase());
-  const presetDesc=k=>{ const x=RST.presets[k]; return `${x.w}×${x.h} · ${x.fps} FPS · ${T("rMB")} ${x.mb?T(x.mb>=8?"rMBmid":"rMBlow"):T("rMBoff")}`; };
+  const presetDesc=k=>{ const x=RST.presets[k]; return `${x.w}×${x.h} · ${x.fps} FPS · ${T("rMB")} ${x.mb?T(x.mb>=24?"rMBmax":x.mb>=16?"rMBhigh":x.mb>=8?"rMBmid":"rMBlow"):T("rMBoff")}`; };
   const draw=()=>{
     const custom=sel.preset==="custom";
     $("#rdlg").innerHTML=`<h3>${T("rTitle")}</h3><div class="hint" style="color:var(--ink2);margin-bottom:12px">${T("rSub")}</div>
@@ -3145,8 +3307,8 @@ async function openRenderDialog(p){
       <div class="presets">${pres.map(k=>`<button class="pre ${sel.preset===k?"on":""}" data-p="${k}"><b>${T("rP_"+k)}</b><span>${presetDesc(k)}</span></button>`).join("")}
         <button class="pre ${custom?"on":""}" data-p="custom"><b>${T("rP_custom")}</b><span>${sel.w}×${sel.h} · ${sel.fps} FPS</span></button></div>
       ${custom?`<div class="rrow">${T("rRes")} <select id="rRes">${[[1280,720],[1920,1080],[2560,1440],[3840,2160]].map(([w,h])=>`<option value="${w}x${h}" ${sel.w==w?"selected":""}>${w}×${h}</option>`).join("")}</select>
-        ${T("rFps")} <select id="rFps">${[30,60,120,144,240].map(f=>`<option ${sel.fps==f?"selected":""}>${f}</option>`).join("")}</select>
-        ${T("rMB")} <select id="rMb">${[[0,"rMBoff"],[4,"rMBlow"],[8,"rMBmid"],[16,"rMBhigh"]].map(([v,k])=>`<option value="${v}" ${sel.mb==v?"selected":""}>${T(k)}</option>`).join("")}</select></div>
+        ${T("rFps")} <select id="rFps">${[30,60,120,144,240,300,360,480].map(f=>`<option ${sel.fps==f?"selected":""}>${f}</option>`).join("")}</select>
+        ${T("rMB")} <select id="rMb">${[[0,"rMBoff"],[4,"rMBlow"],[8,"rMBmid"],[16,"rMBhigh"],[24,"rMBmax"]].map(([v,k])=>`<option value="${v}" ${sel.mb==v?"selected":""}>${T(k)}</option>`).join("")}</select></div>
         <div class="hint" style="color:var(--ink3);font-size:11px">${T("rMBhint")}</div>`:""}
       <div class="rrow">${T("rEnc")} <select id="rEnc">${[["nvenc_h264","rEncNv"],["nvenc_hevc","rEncNvH"],["x264","rEncCpu"],["amd_h264","rEncAmd"],["intel_h264","rEncIntel"]].map(([v,k])=>`<option value="${v}" ${sel.encoder===v?"selected":""}>${T(k)}</option>`).join("")}</select>
         ${T("rSkin")} <select id="rSkin"><option value="">default</option>${(SKIN.list||[]).map(n=>`<option ${sel.skin===n?"selected":""}>${esc(n)}</option>`).join("")}</select></div>
@@ -3215,7 +3377,7 @@ async function renderStudio(p){
   document.body.classList.remove("theater-on");
   const bm=p.beatmap||{}, r=p.replay;
   V.innerHTML=`<section class="studio">
-      <div class="st-title"><h2>${esc(bm.title||T("unknownMap"))}</h2><span>[${esc(bm.version||"?")}] · ${esc(r.player)} · ${r.accuracy.toFixed(2)}%${r.mods_str.length?" · "+r.mods_str.join(""):""}</span><button class="btn small" style="margin-left:auto;align-self:center" onclick="openCmd()">${T("stSwitch")} <kbd>Strg K</kbd></button></div>
+      <div class="st-title"><h2>${esc(bm.title||T("unknownMap"))}</h2><span>[${esc(bm.version||"?")}] · ${esc(pName(r.player))} · ${r.accuracy.toFixed(2)}%${r.mods_str.length?" · "+r.mods_str.join(""):""}</span><button class="btn small" style="margin-left:auto;align-self:center" onclick="openCmd()">${T("stSwitch")} <kbd>Strg K</kbd></button></div>
       <div class="st-step"><i>1</i>${T("st1")} <span>${T("st1h")}</span></div>
       <div class="st-side" id="stSide"></div>
       <div class="st-step"><i>2</i>${T("st2")} <span>${T("st2h")}</span></div>
@@ -3228,7 +3390,7 @@ async function renderStudio(p){
   drawStudioSide(p);
 }
 function drawStudioSide(p){
-  const o=studioOpt(), c=hudCfg(); const pres=RST?Object.keys(RST.presets):["yt1080","yt1440","yt2160","hfr1080","fast720"];
+  const o=studioOpt(), c=hudCfg(); const pres=RST?Object.keys(RST.presets):["yt1080","yt1440","yt2160","smooth1080","hfr1080","fast720"];
   const names={pp:T("hPP"),acc:T("hAcc"),hits:T("hHits"),combo:T("hCombo"),ur:T("hUR"),progress:T("hProg"),keyov:T("hKeys")};
   const posOpts=[["tl","↖"],["tc","↑"],["tr","↗"],["bl","↙"],["bc","↓"],["br","↘"]];
   const custom=o.preset==="custom"||!o.preset; const z=o.dz;
@@ -3244,8 +3406,8 @@ function drawStudioSide(p){
    <div class="card st-sec"><h3>${T("stVideo")}</h3>
      <div class="st-pre">${pres.map(k=>`<button class="pre ${o.preset===k?"on":""}" data-p="${k}" title="${T("rP_"+k)}"><b>${T("rP_"+k)}</b></button>`).join("")}<button class="pre ${custom?"on":""}" data-p="custom"><b>${T("rP_custom")}</b></button></div>
      ${custom?R_(T("rRes"),`<select id="sRes">${[[1280,720],[1920,1080],[2560,1440],[3840,2160]].map(([w,h])=>`<option value="${w}x${h}" ${o.w==w?"selected":""}>${w}×${h}</option>`).join("")}</select>`)
-       +R_(T("rFps"),`<select id="sFps">${[30,60,120,144,240].map(f=>`<option ${o.fps==f?"selected":""}>${f}</option>`).join("")}</select>`)
-       +R_(T("rMB"),`<select id="sMb">${[[0,"rMBoff"],[4,"rMBlow"],[8,"rMBmid"],[16,"rMBhigh"]].map(([v,k])=>`<option value="${v}" ${o.mb==v?"selected":""}>${T(k)}</option>`).join("")}</select>`)
+       +R_(T("rFps"),`<select id="sFps">${[30,60,120,144,240,300,360,480].map(f=>`<option ${o.fps==f?"selected":""}>${f}</option>`).join("")}</select>`)
+       +R_(T("rMB"),`<select id="sMb">${[[0,"rMBoff"],[4,"rMBlow"],[8,"rMBmid"],[16,"rMBhigh"],[24,"rMBmax"]].map(([v,k])=>`<option value="${v}" ${o.mb==v?"selected":""}>${T(k)}</option>`).join("")}</select>`)
        :`<div class="sr" style="grid-template-columns:1fr"><span style="color:var(--ink3)">${o.w}×${o.h} · ${o.fps} FPS · ${T("rMB")} ${o.mb?T(o.mb>=8?"rMBmid":"rMBlow"):T("rMBoff")}</span></div>`}
      ${R_(T("rEnc"),`<select id="sEnc">${[["nvenc_h264","rEncNv"],["nvenc_hevc","rEncNvH"],["x264","rEncCpu"],["amd_h264","rEncAmd"],["intel_h264","rEncIntel"]].map(([v,k])=>`<option value="${v}" ${o.encoder===v?"selected":""}>${T(k)}</option>`).join("")}</select>`)}
    </div>
@@ -3365,6 +3527,9 @@ async function renderHome(){
         <div class="st"><span class="dot ${job?"on":""}"></span>${job?T("hmStudioBusy",{p:Math.round(job.progress||0)}):T("hmStudioIdle")}</div></button>
       <button class="mode" data-go="tablet" style="--glow:radial-gradient(420px 160px at 0% 0%,#5cc8ff2c,transparent)"><div class="ic">${OSU_IC.tablet}</div><div class="tt">${T("hmTablet")}</div><div class="ds">${T("hmTabletD")}</div>
         <div class="st"><span class="dot ${on?"on":""}"></span>${on&&a?T("hmTabOn",{n:esc(otd.tablet||"Tablet"),w:a.w.toFixed(1),h:a.h.toFixed(1)}):T("hmTabOff")}</div></button>
+      ${(()=>{ const O=(CFG&&CFG.overlay)||{}, w=[O.ingame?T("hmOvIngame"):"",O.window?T("hmOvWin"):"","OBS"].filter(Boolean);
+        return `<button class="mode" data-go="overlay" style="--glow:radial-gradient(420px 160px at 0% 0%,#ff66aa26,transparent)"><div class="ic">${OSU_IC.overlay}</div><div class="tt">${T("hmOverlay")}</div><div class="ds">${T("hmOverlayD")}</div>
+        <div class="st"><span class="dot ${O.ingame||O.window?"on":""}"></span>${w.join(" · ")}</div></button>`; })()}
     </div>
     <div class="hstats">${stat(T("hmScores"),n)}${stat(T("hmAvgAcc"),acc!=null?acc.toFixed(2)+"%":"–")}${stat(T("hmBestPP"),best?Math.round(best)+"pp":"–")}${stat(T("hmAvgUR"),ur!=null?ur.toFixed(1):"–")}${stat(T("hmMaps"),st?st.indexed.toLocaleString(T("locale")):"–")}</div>
     <div class="hsec">${T("hmRecent")}</div>
@@ -3383,6 +3548,7 @@ async function renderHome(){
 }
 
 /* ---- home side column: form, today, what to work on, top plays */
+function pName(n){ return n&&String(n).trim().toLowerCase()!=="guest"?n:`${T("you")} (${T("offline")})`; }
 function homeMe(){ const plays=APL(); const c={}; plays.forEach(p=>c[p.player]=(c[p.player]||0)+1); const me=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]; return me?me[0]:null; }
 function homeSide(){
   const plays=APL(); if(!plays.length) return "";
@@ -3415,6 +3581,7 @@ function drawForm(){
   document.querySelectorAll(".htop").forEach(b=>b.onclick=()=>select(b.dataset.id));
   try{ drawLimits(); }catch(e){ console.error(e); }
   const cv=$("#hwForm"); if(!cv) return; const me=homeMe(); const P=APL().filter(p=>p.player===me&&p.passed!==false).slice(0,30).reverse(); if(P.length<2) return;
+  autoSize(cv,drawForm);
   const dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; cv.width=W*dpr; cv.height=H*dpr; const g=cv.getContext("2d"); g.scale(dpr,dpr);
   const acc=P.map(p=>p.acc), lo=Math.min(...acc)-0.5, hi=Math.max(...acc)+0.3, ppM=Math.max(1,...P.map(p=>p.pp||0));
   const X=i=>8+i*(W-16)/(P.length-1), Y=v=>H-16-(v-lo)/(hi-lo)*(H-28), bw=Math.max(3,(W-16)/P.length*0.55);
@@ -3487,7 +3654,10 @@ async function renderDanserAll(p){
   walk(DZ_SET.settings,"");
   const pretty=s=>s.replace(/([a-z])([A-Z])/g,"$1 $2");
   const q=DZ_Q.trim().toLowerCase(), groups={};
-  rows.forEach(([path,v])=>{ if(q&&!path.toLowerCase().includes(q)&&!pretty(path).toLowerCase().includes(q)) return; const top=path.split(".")[0]; (groups[top]=groups[top]||[]).push([path,v]); });
+  // folders, encoder/ffmpeg options and output are always set by osu!review (the app ignores changes there)
+  const locked=path=>{ const k=path.toLowerCase().split("."); if(k[0]==="general"||k[0]==="recording") return !(k[0]==="recording"&&["motionblur","fps","framewidth","frameheight"].includes(k[1]));
+    return k.some(x=>["dir","path","ffmpeg","options","command","exe"].some(w=>x.includes(w))); };
+  rows.forEach(([path,v])=>{ if(locked(path)) return; if(q&&!path.toLowerCase().includes(q)&&!pretty(path).toLowerCase().includes(q)) return; const top=path.split(".")[0]; (groups[top]=groups[top]||[]).push([path,v]); });
   const ctl=(path,def)=>{ const has=path in over, man=!has&&(path in managed), v=has?over[path]:man?managed[path]:def, id=esc(path);
     let c; if(typeof def==="boolean") c=`<div class="chips"><label class="chk"><input type="checkbox" data-dzp="${id}" data-t="b" ${v?"checked":""}>${v?T("yes"):T("no")}</label></div>`;
     else if(typeof def==="number") c=`<input type="number" step="any" data-dzp="${id}" data-t="n" value="${v}" style="width:100%">`;
@@ -3565,7 +3735,7 @@ function applyTheme(th=TH){
   for(const k in v) R.setProperty(k,v[k]);
   document.body.classList.toggle("glass",glass);
   const bg=$("#appbg"); if(bg) bg.querySelectorAll("i").forEach(i=>i.style.display=glass?"":"none");
-  const app=$("#app"); if(app) app.classList.toggle("mini",th.side==="mini"||VIEW==="home"||VIEW==="tablet");
+  const app=$("#app"); if(app) app.classList.toggle("mini",th.side==="mini"||VIEW==="home"||VIEW==="tablet"||VIEW==="overlay");
   UI.ac=th.ac; UI.ac2=th.ac2; UI.acl=_mix(th.ac,"#ffffff",.5); C.accent=th.ac;
   const fav=document.querySelector("link[rel=icon]"); if(fav) fav.href=fav.href.replace(/%23[0-9a-f]{6}/i,"%23"+th.ac.slice(1));
   setTimeout(()=>navIndicator(),470);
@@ -3689,7 +3859,7 @@ function fillSettings(s){
     d.className=need.every(x=>P[x])?"ok":"bad"; if(k==="pp") d.className=(P.tosu||cfg.osu_client_id)?"ok":"mid"; if(k==="rw") d.className=cfg.rewind_handoff?(P.rewind_folder?"ok":"bad"):"off"; if(k==="tab") d.className=P.otd?"ok":"mid"; }
   const tiles=[["stable","pStable","osu"],["songs","pSongs","osu"],["lazer","pLazer","osu"],["skins","pSkins","osu"],["tosu","pTosu","pp"],["api","osu! API","pp"],["otd","pOtd","tab"],["rewind_exe","pRwExe","rw"]];
   $("#stiles").innerHTML=tiles.map(([k,n,sec])=>{ const ok=k==="api"?!!(cfg.osu_client_id&&cfg.osu_client_secret):!!P[k];
-    return `<button class="stile ${ok?"ok":"bad"}" data-go="${sec}"><span class="d"></span><b>${n.includes(" ")?n:T(n)}</b><small>${ok?T("stFound"):k==="api"?T("stOptional"):k==="tosu"?T("stNotRunning"):T("stMissing")}</small></button>`; }).join("");
+    return `<button class="stile ${ok?"ok":k==="api"?"opt":"bad"}" data-go="${sec}"><span class="d"></span><b>${n.includes(" ")?n:T(n)}</b><small>${ok?T("stFound"):k==="api"?T("stOptional"):k==="tosu"?T("stNotRunning"):T("stMissing")}</small></button>`; }).join("");
   $("#sinfo").innerHTML=`<div><span>${T("stIndex")}</span><b>${esc(idxText(s))}</b></div><div><span>${T("dataDir")}</span><b class="mono">${esc(s.data_dir)}</b></div><div><span>${T("stScores")}</span><b>${plays.length}</b></div><div><span>Version</span><b>${esc((window.VERSION||{}).version||"?")}</b></div>`;
   $("#sver").textContent="osu!review v"+((window.VERSION||{}).version||"?");
   $("#stiles").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>setSec(b.dataset.go));
@@ -3715,7 +3885,7 @@ $("#btnClose").onclick=()=>$("#modal").classList.remove("open");
 $("#btnApiTest").onclick=async()=>{ const r=$("#apiRes"); r.textContent="…";
   const j=await api("/api/osuapi/test",{method:"POST",body:JSON.stringify({id:$("#s_osu_client_id").value.trim(),secret:$("#s_osu_client_secret").value.trim()})}).catch(e=>({ok:false,error:String(e)}));
   r.innerHTML=j.ok?`<span style="color:#86efac">✓ ${T("apiOk")}</span>`:`<span style="color:#ff8097">✕ ${esc(j.error||"")}</span>`; };
-$("#btnSave").onclick=async()=>{ const o={}; FIELDS.forEach(f=>{ const el=$("#s_"+f); o[f]=el.type==="checkbox"?el.checked:el.value.trim(); });
+$("#btnSave").onclick=async()=>{ const o={}; FIELDS.forEach(f=>{ const el=$("#s_"+f); o[f]=el.type==="checkbox"?el.checked:el.value.trim(); }); 
   await api("/api/settings",{method:"POST",body:JSON.stringify(o)}); $("#modal").classList.remove("open");
   SKIN.list=[]; applyStatic(); await loadList(); loadStatus(); if(cur) render(cur); };
 $("#btnReindex").onclick=()=>{ api("/api/reindex",{method:"POST"}); toast(T("reindexing")); };

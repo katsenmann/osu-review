@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>osu!review overlay</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--OSR_MODE-->
+<style>
+html,body{margin:0;height:100%;background:transparent;overflow:hidden}
+body.window{background:#0e0b14}
+#stage{position:fixed;inset:0;pointer-events:none}
+#ov{position:absolute;box-sizing:border-box;line-height:1.4;font-size:12px;transition:opacity .25s,transform .25s;pointer-events:none}
+#ov.hidden{opacity:0}
+#ov.slide.hidden{transform-origin:top left;translate:0 -14px}
+#ov .mu{opacity:.65;font-size:.85em}
+/* ---- modern style (like the osu!review client) ---- */
+.m{--g:14px;font-variant-numeric:tabular-nums}
+.m .hd{position:relative;margin:-10px -12px 10px;padding:12px 14px 11px;border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;overflow:hidden;min-height:46px}
+.m .hd .bgi{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(1.5px) saturate(1.1);transform:scale(1.06);opacity:.55}
+.m .hd::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 8%,color-mix(in srgb,var(--bg) 55%,transparent) 70%,color-mix(in srgb,var(--bg) 25%,transparent)),linear-gradient(0deg,var(--bg),transparent 70%)}
+.m .hd>*{position:relative;z-index:1}
+.m .ttl{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.m .sub{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:11px;opacity:.85;white-space:nowrap}
+.m .chip{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.3px;background:color-mix(in srgb,var(--tx) 10%,transparent);border:1px solid color-mix(in srgb,var(--tx) 14%,transparent)}
+.m .chip.ac{background:color-mix(in srgb,var(--ac) 22%,transparent);border-color:color-mix(in srgb,var(--ac) 55%,transparent);color:var(--ac)}
+.m .brand{position:absolute;top:10px;right:12px;display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;opacity:.8}
+.m .brand i{width:7px;height:7px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac)}
+.m .hero{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.m .ring{position:relative;width:62px;height:62px;flex:none}
+.m .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:22px;font-weight:800}
+.m .big{font-size:22px;font-weight:800;line-height:1.05}
+.m .lbl{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;opacity:.55;font-weight:600}
+.m .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:7px}
+.m .tile{background:color-mix(in srgb,var(--tx) 6%,transparent);border:1px solid color-mix(in srgb,var(--tx) 9%,transparent);border-radius:10px;padding:6px 8px}
+.m .tile .v{font-size:15px;font-weight:700;margin-top:1px}
+.m .sec{background:color-mix(in srgb,var(--tx) 4%,transparent);border:1px solid color-mix(in srgb,var(--tx) 8%,transparent);border-radius:12px;padding:7px 10px;margin-bottom:7px}
+.m>.sec:last-child,.m>div:last-child>.sec:last-child{margin-bottom:0}
+.m .sech{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.m .up{color:var(--up)} .m .dn{color:var(--dn)}
+.m .row{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:3px 0}
+.m .gr{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:800;color:#111}
+#ov b{font-weight:600}
+#msg{position:fixed;left:10px;bottom:8px;font:11px system-ui,sans-serif;color:#a49dbb}
+body.window{overflow:hidden}
+</style>
+</head>
+<body>
+<div id="stage"><div id="ov" class="hidden"></div></div>
+<div id="msg"></div>
+<script>
+/* osu!review song-select overlay.
+   ?mode=obs (default) | ingame | window | preview  ·  preview gets its settings from the settings page */
+const Q=new URLSearchParams(location.search);
+const MODE=window.OSR_MODE||Q.get("mode")||"obs";
+const API=window.OSR_API||"";
+if(MODE==="window") document.body.classList.add("window");
+const FONTS={sans:'system-ui,"Segoe UI",sans-serif',round:'"Varela Round","Nunito","Segoe UI",sans-serif',mono:'ui-monospace,Consolas,monospace',serif:'Georgia,serif'};
+const RS={aim:"clicked off target",notelock:"notelock",nopress:"no click",early:"too early",late:"too late",away:"cursor away",
+  shead:"slider start missed",sbreak:"slider dropped",send:"slider end missed",skipped:"skipped",failed:"failed"};
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtT=ms=>{ ms=Math.max(0,ms||0); const s=Math.round(ms/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+const ago=sec=>{ if(!sec) return ""; const d=(Date.now()/1000-sec)/86400; if(d<1) return "today"; if(d<2) return "yesterday"; if(d<14) return Math.floor(d)+" days"; return Math.floor(d/7)+" weeks"; };
+const KEYM=m=>{ const s=String(m||"").toUpperCase(); const out=[]; ["DT","HT","HR","EZ","FL"].forEach(k=>{ if(s.includes(k)) out.push(k); }); if(s.includes("NC")&&!out.includes("DT")) out.push("DT"); return out.sort().join("")||"NM"; };
+const hex2rgb=h=>{ h=String(h||"#000").replace("#",""); if(h.length===3) h=h.split("").map(c=>c+c).join(""); return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16)||0); };
+
+let STATE=null, CFG=null, lastKey="";
+const DEMO={screen:"select",tosu:true,mods:"DT",md5:"demo",map:{title:"Example Song",version:"Lunatic",length:164000,stars:6.42,maxc:1204},plays:(()=>{
+  const now=Date.now()/1000, X=[11,9,12,7,6,8,4,2], A=[93.40,94.10,92.80,95.21,95.39,96.20,96.53,97.47];
+  return X.map((x,i)=>({id:"d"+i,added:now-(8-i)*86400*0.6,mods:"DT",acc:A[i],miss:x,pp:120+i*9,ur:138-i*4,mean:6+i*0.4,passed:true,len:164000,
+    spots:Array.from({length:x},(_,j)=>[j%3?102000+j*1200:30000+j*800,j%2?"aim":"late",j%2?null:9])}));})(),
+  ppacc:{"90":204,"91":209,"92":215,"93":222,"94":231,"95":241,"96":252,"97":266,"98":284,"99":306,"100":334},
+  recent:(()=>{ const now=Date.now()/1000, A=[94.1,93.2,95.0,94.4,92.8,95.6,96.1,93.9,94.7,95.2,93.1,94.8,95.9,94.2,93.6,95.4,96.3,95.1,96.6,95.8,97.1,96.4,95.9,97.4];
+    return A.map((v,i)=>({added:i<18?now-(30-i)*3600*5:now-(24-i)*720,acc:v,pp:150+((i*37)%90),miss:3}));})()};
+
+/* ---------------------------------------------------------------- stats */
+function stats(st,cfg){
+  let P=(st.plays||[]).slice();
+  if(cfg.cmp==="mods"){ const k=KEYM(st.mods); const f=P.filter(p=>KEYM(p.mods)===k); P=f; }
+  const n=P.length, last=P[n-1], prev=P[n-2];
+  const passed=P.filter(p=>p.passed!==false);
+  const best={acc:Math.max(...P.map(p=>p.acc||0)), pp:Math.max(0,...P.map(p=>p.pp||0)),
+    miss:passed.length?Math.min(...passed.map(p=>p.miss??99)):null, ur:Math.min(...P.filter(p=>p.ur).map(p=>p.ur))};
+  const recent=P.slice(-cfg.np);
+  // trouble spot: where most misses of the recent plays are
+  let spot=null; const len=(st.map&&st.map.length)||Math.max(0,...P.map(p=>p.len||0));
+  if(len>0){ const B=24, bins=new Array(B).fill(0), rs={}, errs=[]; let tot=0;
+    recent.forEach(p=>(p.spots||[]).forEach(m=>{ const i=Math.min(B-1,Math.max(0,Math.floor(m[0]/len*B))); bins[i]++; tot++; }));
+    if(tot>=2){ let bi=0,bv=-1; for(let i=0;i<B-1;i++){ const v=bins[i]+bins[i+1]; if(v>bv){bv=v;bi=i;} }
+      const a=bi/B*len, b=(bi+2)/B*len;
+      recent.forEach(p=>(p.spots||[]).forEach(m=>{ if(m[0]>=a&&m[0]<b){ rs[m[1]]=(rs[m[1]]||0)+1; if(m[2]!=null) errs.push(m[2]); } }));
+      const top=Object.entries(rs).sort((x,y)=>y[1]-x[1])[0];
+      const me=errs.length?errs.reduce((x,y)=>x+y,0)/errs.length:null;
+      spot={a,b,n:bv,tot,why:top?(RS[top[0]]||top[0]):"",err:me,bins,len}; } }
+  return {P,n,last,prev,best,recent,spot};
+}
+
+/* ---------------------------------------------------------------- render */
+function build(st,cfg){
+  const S=stats(st,cfg), a=cfg.ac, up=cfg.ud==="g"?"#8fd14f":cfg.ud==="b"?"#5cc8ff":a, dn=cfg.ud==="g"?"#ff6b8a":cfg.ud==="b"?"#ff9a3d":"#888";
+  if(!S.n){ if(cfg.hide_unplayed) return "";
+    const all=(st.plays||[]).length, mk=KEYM(st.mods);
+    const msg=all&&cfg.cmp==="mods"?`No ${mk==="NM"?"NoMod":mk} plays on this difficulty yet – you have ${all} with other mods.`:"No plays on this difficulty yet – go set the first one.";
+    const f=(cfg.blocks||[]).some(b=>b.on&&b.k==="form")?blockForm(st,cfg):"";
+    return `${head(cfg,"no plays yet")}<div class="mu" style="margin-bottom:${f?7:0}px">${msg}</div>${f}`; }
+  const cmpv=(lo,o,n,fmt)=>{ if(o==null||n==null) return `<span class="mu">–</span><b>${fmt(n)}</b>`; const better=lo?n<o:n>o, same=Math.abs(n-o)<1e-9;
+    return `<span class="mu">${fmt(o)}</span><b style="color:${same?"inherit":better?up:dn}">${fmt(n)} ${same?"":better?"▲":"▼"}</b>`; };
+  const chart=()=>{ const v=S.recent.map(p=>p.miss??0), mx=Math.max(1,...v);
+    if(cfg.cs==="bars") return `<div style="display:flex;align-items:flex-end;gap:3px;height:30px;margin:3px 0 7px">${v.map((x,i)=>`<div title="${x}" style="flex:1;height:${Math.max(6,x/mx*100)}%;background:${i===v.length-1?a:a+"77"};border-radius:2px"></div>`).join("")}</div>`;
+    const W=200,H=30,pts=v.map((x,i)=>[4+i*(W-8)/Math.max(1,v.length-1),H-3-x/mx*(H-6)]);
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="30" preserveAspectRatio="none" style="margin:3px 0 7px;display:block">${cfg.cs==="line"&&pts.length>1?`<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${a}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`:""}${pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="${cfg.cs==="dots"?3.2:2}" fill="${i===pts.length-1?a:a+"aa"}"/>`).join("")}</svg>`; };
+  const B={
+    best:()=>`<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px">${[["best acc",S.best.acc.toFixed(2)+"%"],["best pp",S.best.pp?Math.round(S.best.pp):"–"],["fewest X",S.best.miss??"–"],["best UR",isFinite(S.best.ur)?Math.round(S.best.ur):"–"]].map(x=>`<div style="background:${cfg.tx}12;border-radius:${Math.max(2,cfg.rad/2)}px;padding:4px 6px"><div class="mu">${x[0]}</div><b>${x[1]}</b></div>`).join("")}</div>`,
+    trend:()=>S.recent.length<2?"":`<div class="mu">misses per play</div>${chart()}`,
+    cmp:()=>!S.prev?"":`<div class="mu">last vs. previous</div><div style="display:grid;grid-template-columns:1fr auto auto;gap:1px 8px;margin:2px 0 7px">
+      <span>acc</span>${cmpv(false,S.prev.acc,S.last.acc,x=>x.toFixed(2))}<span>misses</span>${cmpv(true,S.prev.miss,S.last.miss,x=>x)}${S.last.ur&&S.prev.ur?`<span>UR</span>${cmpv(true,S.prev.ur,S.last.ur,x=>Math.round(x))}`:""}</div>`,
+    spot:()=>!S.spot?"":`<div class="mu">trouble spot</div><div style="position:relative;height:9px;background:${cfg.tx}18;border-radius:5px;margin:3px 0">${S.spot.bins.map((v,i)=>v?`<div style="position:absolute;left:${i/24*100}%;width:${100/24}%;top:0;bottom:0;background:${a};opacity:${Math.min(1,.2+v/Math.max(...S.spot.bins)*.8)};border-radius:3px"></div>`:"").join("")}</div>
+      <div style="margin-bottom:7px">${fmtT(S.spot.a)}–${fmtT(S.spot.b)}: ${S.spot.n} of your last ${S.spot.tot} misses${S.spot.why?", mostly "+esc(S.spot.why):""}${S.spot.err!=null&&Math.abs(S.spot.err)>=4&&Math.abs(S.spot.err)<=40?` – you're ~${Math.abs(Math.round(S.spot.err))} ms ${S.spot.err>0?"late":"early"} there`:""}.</div>`,
+    table:()=>`<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:2px 9px;margin-bottom:7px;font-variant-numeric:tabular-nums"><span class="mu">when</span><span class="mu">acc</span><span class="mu">X</span><span class="mu">UR</span>${S.P.slice(-4).reverse().map((p,i)=>`<span>${ago(p.added)}</span><b style="${i===0?"color:"+a:"font-weight:400"}">${(p.acc||0).toFixed(2)}</b><span>${p.miss??"–"}</span><span>${p.ur?Math.round(p.ur):"–"}</span>`).join("")}</div>`,
+    form:()=>blockForm(st,cfg),
+    fc:()=>fcBlock(st,S,cfg,false),
+    strip:()=>`<div style="display:flex;align-items:center;gap:8px;white-space:nowrap;margin-bottom:2px"><span>${S.best.acc.toFixed(2)}% best</span><span class="mu">·</span><span>${S.last.miss??0} X last</span>${S.prev?`<span style="color:${(S.last.miss??0)<=(S.prev.miss??0)?up:dn}">${(S.last.miss??0)<=(S.prev.miss??0)?"▲":"▼"}</span>`:""}</div>`};
+  const on=(cfg.blocks||[]).filter(b=>b.on&&B[b.k]);
+  const body=on.map(b=>{ const h=B[b.k](); return h?`<div style="${cfg.lay==="row"?"flex:1;min-width:0":""}">${h}</div>`:""; }).join("");
+  if(!body) return "";
+  return head(cfg,`${S.n} play${S.n===1?"":"s"}${cfg.cmp==="mods"?" · "+KEYM(st.mods):""}`)+`<div style="${cfg.lay==="row"?"display:flex;gap:10px":""}">${body}</div>`;
+}
+/* your form across all maps + the current session (gaps under 45 min, last play within 2 h) */
+function blockForm(st,cfg){
+  const R=(st.recent||[]).filter(p=>p.acc!=null&&p.added&&p.passed!==false); if(R.length<3) return "";
+  const a=cfg.ac, up=cfg.ud==="g"?"#8fd14f":cfg.ud==="b"?"#5cc8ff":a, dn=cfg.ud==="g"?"#ff6b8a":cfg.ud==="b"?"#ff9a3d":"#888";
+  const now=Date.now()/1000; let i=R.length-1, ses=[];
+  if(now-R[i].added<7200){ ses=[R[i]]; while(i>0&&R[i].added-R[i-1].added<2700){ i--; ses.unshift(R[i]); } }
+  const avg=L=>L.reduce((x,p)=>x+p.acc,0)/L.length;
+  const cur=ses.length?ses:R.slice(-10), before=R.slice(0,R.length-cur.length).slice(-10);
+  const d=before.length?avg(cur)-avg(before):null;
+  const dur=m=>m<60?m+" min":Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m";
+  const bp=Math.max(0,...cur.map(p=>p.pp||0));
+  const title=ses.length?`this session · ${ses.length} play${ses.length===1?"":"s"} · ${dur(Math.max(1,Math.round((now-ses[0].added)/60)))}`:"last 10 plays";
+  const L=R.slice(-30), W=220, H=46, n=L.length, xs=k=>4+k*(W-8)/Math.max(1,n-1);
+  const lo=Math.min(...L.map(p=>p.acc)), hi=Math.max(...L.map(p=>p.acc)), ys=v=>H-5-(v-lo)/Math.max(.5,hi-lo)*(H-12);
+  const mp=Math.max(1,...L.map(p=>p.pp||0)), s0=n-Math.min(n,cur.length);
+  const bars=L.map((p,k)=>p.pp?`<rect x="${xs(k)-2.5}" y="${H-p.pp/mp*(H-6)}" width="5" height="${p.pp/mp*(H-6)}" rx="1" fill="${a}" opacity=".18"/>`:"").join("");
+  const pts=L.map((p,k)=>[xs(k),ys(p.acc)]);
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="display:block;margin:4px 0 2px">
+    ${ses.length?`<rect x="${xs(s0)-5}" y="0" width="${W-xs(s0)+5}" height="${H}" rx="4" fill="${cfg.tx}" opacity=".07"/>`:""}${bars}
+    <polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${a}" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    ${pts.map((p,k)=>`<circle cx="${p[0]}" cy="${p[1]}" r="${k>=s0&&ses.length?2.4:1.7}" fill="${a}" opacity="${k>=s0||!ses.length?1:.6}"/>`).join("")}</svg>`;
+  return `<div class="mu">${title}</div>
+    <div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-top:2px"><span>Ø <b>${avg(cur).toFixed(2)}%</b>${d!=null?` <b style="color:${d>=0?up:dn}">${d>=0?"+":"–"}${Math.abs(d).toFixed(2)}</b>`:""}</span>${bp?`<span>best <b>${Math.round(bp)}pp</b></span>`:""}</div>
+    ${svg}<div class="mu" style="font-size:.75em;margin-bottom:7px">line = acc · bars = pp · last ${n} plays</div>`;
+}
+/* ================================================================ modern style */
+const GRADE=p=>{ const a=p.acc||0, m=p.miss??1; if(a>=99.99) return ["SS","#ffd95e"]; if(a>=93.17&&!m) return ["S","#ffcc22"];
+  if(a>=93.17||(a>=86.33&&!m)) return ["A","#8fd14f"]; if(a>=86.33||(a>=80&&!m)) return ["B","#4fb8f0"]; if(a>=80) return ["C","#c77bf0"]; return ["D","#ff5c6c"]; };
+function ring(pct,col,grade){ const r=26,c=2*Math.PI*r, f=Math.max(0,Math.min(1,pct));
+  return `<div class="ring"><svg viewBox="0 0 62 62" width="62" height="62"><circle cx="31" cy="31" r="${r}" fill="none" stroke="currentColor" stroke-opacity=".1" stroke-width="5"/>
+    <circle cx="31" cy="31" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c*f} ${c}" transform="rotate(-90 31 31)" style="filter:drop-shadow(0 0 4px ${col}88)"/></svg><b style="color:${col}">${grade}</b></div>`; }
+function area(vals,opt){ // smooth area chart with gradient + optional bars underneath
+  const W=260,H=opt.h||54,n=vals.length; if(n<2) return "";
+  const lo=Math.min(...vals), hi=Math.max(...vals), sp=Math.max(opt.minSpan||1,hi-lo);
+  const X=i=>6+i*(W-12)/(n-1), Y=v=>H-8-(v-lo)/sp*(H-18);
+  const P=vals.map((v,i)=>[X(i),Y(v)]);
+  let d=`M${P[0][0]},${P[0][1]}`; for(let i=1;i<n;i++){ const [x0,y0]=P[i-1],[x1,y1]=P[i],mx=(x0+x1)/2; d+=` C${mx},${y0} ${mx},${y1} ${x1},${y1}`; }
+  const id="g"+Math.random().toString(36).slice(2,7), a=opt.col;
+  const bars=(opt.bars||[]).map((b,i)=>b?`<rect x="${X(i)-3}" y="${H-b*(H-14)}" width="6" height="${b*(H-14)}" rx="2" fill="${opt.barCol||a}" opacity=".22"/>`:"").join("");
+  const band=opt.from!=null?`<rect x="${X(opt.from)-6}" y="0" width="${W-X(opt.from)+6}" height="${H}" rx="6" fill="currentColor" opacity=".06"/>`:"";
+  const last=P[n-1];
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="display:block;overflow:visible">
+    <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${a}" stop-opacity=".45"/><stop offset="1" stop-color="${a}" stop-opacity="0"/></linearGradient></defs>
+    ${band}${bars}<path d="${d} L${last[0]},${H} L${P[0][0]},${H} Z" fill="url(#${id})"/>
+    <path d="${d}" fill="none" stroke="${a}" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    ${(opt.dots||[]).map(i=>`<circle cx="${P[i][0]}" cy="${P[i][1]}" r="2.6" fill="${a}"/>`).join("")}
+    <circle cx="${last[0]}" cy="${last[1]}" r="4.2" fill="${a}" stroke="var(--bg)" stroke-width="2" style="filter:drop-shadow(0 0 5px ${a})"/></svg>`; }
+function ppAt(st,acc){ const T=st.ppacc||{}; const ks=Object.keys(T).map(Number).filter(isFinite).sort((x,y)=>x-y); if(!ks.length||acc==null) return null;
+  if(acc<=ks[0]) return T[ks[0]]*Math.max(0,acc/ks[0])**4; if(acc>=ks[ks.length-1]) return T[ks[ks.length-1]];
+  for(let i=1;i<ks.length;i++) if(acc<=ks[i]){ const a=ks[i-1],b=ks[i],f=(acc-a)/(b-a); return T[a]+(T[b]-T[a])*f; } return null; }
+function fcBlock(st,S,cfg,modern){
+  const ss=ppAt(st,100); if(ss==null) return "";
+  const best=S&&S.n?Math.max(...S.P.map(p=>p.acc||0)):null, last=S&&S.last?S.last.acc:null;
+  const rows=[]; if(best) rows.push(["your best acc",best]); if(last&&Math.abs(last-best)>.05) rows.push(["your last acc",last]); [98,95].forEach(a=>{ if(!rows.some(r=>Math.abs(r[1]-a)<.6)) rows.push([a+"%",a]); });
+  const myBest=S&&S.n?Math.max(0,...S.P.map(p=>p.pp||0)):0;
+  const gain=best?ppAt(st,best)-myBest:null;
+  if(!modern) return `<div class="mu">if you FC</div><div style="display:grid;grid-template-columns:1fr auto;gap:1px 8px;margin:2px 0 7px"><span>SS</span><b>${Math.round(ss)}pp</b>${rows.map(r=>`<span>${r[0]==="your best acc"||r[0]==="your last acc"?`${r[0]} (${r[1].toFixed(2)}%)`:r[0]}</span><b>${Math.round(ppAt(st,r[1]))}pp</b>`).join("")}</div>`;
+  const mx=ss;
+  return `<div class="sec"><div class="sech"><span class="lbl">if you FC</span><span style="font-size:10px;opacity:.6">${st.map&&st.map.stars?`★ ${(+st.map.stars).toFixed(2)}`:""}${st.map&&st.map.maxc?` · ${st.map.maxc}x`:""}</span></div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><span class="big" style="font-size:20px;color:var(--ac)">${Math.round(best?ppAt(st,best):ss)}<small style="font-size:.55em;opacity:.8">pp</small></span>
+      <span style="font-size:11px;opacity:.75">${best?`at your best ${best.toFixed(2)}%`:"SS"}</span>${gain!=null&&myBest&&gain>0.5?`<span class="chip ac" style="margin-left:auto;white-space:nowrap" title="vs your best pp on this map">+${Math.round(gain)}pp</span>`:""}</div>
+    ${[["SS",100],...rows.filter(r=>r[0]!=="your best acc")].map(([l,acc])=>{ const v=ppAt(st,acc); return `<div style="display:grid;grid-template-columns:72px 1fr 44px;gap:8px;align-items:center;margin-top:3px;font-size:11px">
+      <span style="opacity:.75;white-space:nowrap">${l==="your last acc"?`last ${acc.toFixed(1)}%`:l}</span><div style="height:6px;border-radius:3px;background:color-mix(in srgb,var(--tx) 8%,transparent)"><div style="height:100%;width:${Math.max(3,v/mx*100)}%;border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 45%,transparent),var(--ac))"></div></div><b style="text-align:right">${Math.round(v)}</b></div>`; }).join("")}</div>`;
+}
+function bgUrl(st){ if(MODE==="preview"&&(!Q.get("live")||st===DEMO)) return ""; const base=MODE==="ingame"?"":"http://127.0.0.1:24050"; return `${base}/files/beatmap/background?m=${encodeURIComponent(st.md5||"")}`; }
+
+function buildModern(st,cfg){
+  const S=stats(st,cfg), a=cfg.ac, mk=KEYM(st.mods), mods=String(st.mods||"").replace(/(..)/g,"$1 ").trim();
+  const bg=bgUrl(st), map=st.map||{};
+  const hd=cfg.hdr?`<div class="hd">${bg?`<div class="bgi" style="background-image:url('${bg}')"></div>`:`<div class="bgi" style="background:linear-gradient(120deg,${a}55,transparent 60%)"></div>`}
+    <div class="brand"><i></i>${esc(cfg.tt)}</div>
+    <div class="ttl" style="padding-right:70px">${esc(map.title||"")}</div>
+    <div class="sub"><span style="overflow:hidden;text-overflow:ellipsis">${esc(map.version||"")}</span>${mods?`<span class="chip ac">${esc(mods)}</span>`:`<span class="chip">NM</span>`}${map.stars?`<span class="chip">★ ${(+map.stars).toFixed(2)}</span>`:""}<span class="chip">${S.n?`${S.n} play${S.n===1?"":"s"}`:"new"}</span></div></div>`:"";
+  if(!S.n){ if(cfg.hide_unplayed) return "";
+    const all=(st.plays||[]).length;
+    const msg=all&&cfg.cmp==="mods"?`No ${mk==="NM"?"NoMod":mk} plays yet – you have ${all} with other mods.`:"Not played yet – go set the first one.";
+    const on=k=>(cfg.blocks||[]).some(b=>b.on&&b.k===k);
+    const f=(on("fc")?fcBlock(st,null,cfg,true):"")+(on("form")?mForm(st,cfg):"");
+    return hd+`<div class="sec" style="display:flex;gap:10px;align-items:center"><div style="font-size:22px;opacity:.5">✦</div><div>${msg}</div></div>${f}`; }
+  const best=S.P.reduce((x,p)=>(p.acc||0)>(x.acc||0)?p:x,S.P[0]); const [g,gc]=GRADE(best);
+  const avg=S.P.reduce((x,p)=>x+(p.acc||0),0)/S.n;
+  const dlt=(o,n,lo)=>o==null||n==null||o===n?"":((lo?n<o:n>o)?`<span class="up">▲</span>`:`<span class="dn">▼</span>`);
+  const B={
+    best:()=>`<div class="hero">${ring((best.acc-80)/20,gc,g)}<div style="flex:1;min-width:0"><div class="lbl">best accuracy</div><div class="big">${best.acc.toFixed(2)}<small style="font-size:.55em;opacity:.7">%</small></div>
+        <div style="font-size:11px;opacity:.75;margin-top:2px">Ø ${avg.toFixed(2)}% · last ${(S.last.acc||0).toFixed(2)}% ${dlt(S.prev&&S.prev.acc,S.last.acc)}</div></div></div>
+      <div class="tiles"><div class="tile"><div class="lbl">best pp</div><div class="v">${S.best.pp?Math.round(S.best.pp):"–"}</div></div>
+        <div class="tile"><div class="lbl">fewest ✕</div><div class="v">${S.best.miss??"–"}</div></div>
+        <div class="tile"><div class="lbl">best UR</div><div class="v">${isFinite(S.best.ur)?Math.round(S.best.ur):"–"}</div></div></div>`,
+    trend:()=>{ const R=S.recent; if(R.length<2) return ""; const mx=Math.max(1,...R.map(p=>p.miss??0));
+      return `<div class="sec"><div class="sech"><span class="lbl">accuracy · misses</span><span style="font-size:10px;opacity:.6">last ${R.length}</span></div>
+        ${area(R.map(p=>p.acc||0),{col:a,bars:R.map(p=>(p.miss??0)/mx),barCol:"var(--dn)",dots:R.map((_,i)=>i),minSpan:1})}</div>`; },
+    cmp:()=>!S.prev?"":`<div class="sec"><div class="sech"><span class="lbl">last vs. previous</span></div><div class="tiles" style="margin:0">
+      ${[["acc",S.prev.acc,S.last.acc,0,x=>x.toFixed(2)],["misses",S.prev.miss,S.last.miss,1,x=>x],["UR",S.prev.ur,S.last.ur,1,x=>Math.round(x)]].filter(r=>r[2]!=null).map(([l,o,n,lo,f])=>`<div class="tile"><div class="lbl">${l}</div><div class="v" style="white-space:nowrap">${f(n)}<small style="font-size:.7em"> ${dlt(o,n,lo)}</small></div><div style="font-size:10px;opacity:.55">was ${o==null?"–":f(o)}</div></div>`).join("")}</div></div>`,
+    spot:()=>!S.spot?"":`<div class="sec"><div class="sech"><span class="lbl">trouble spot</span><span style="font-size:10px;opacity:.6">${fmtT(S.spot.a)}–${fmtT(S.spot.b)}</span></div>
+      <div style="position:relative;height:10px;border-radius:5px;background:color-mix(in srgb,var(--tx) 8%,transparent);margin:4px 0 6px">${S.spot.bins.map((v,i)=>v?`<div style="position:absolute;left:${i/24*100}%;width:${100/24}%;top:0;bottom:0;background:var(--dn);opacity:${Math.min(1,.25+v/Math.max(...S.spot.bins)*.75)};border-radius:3px"></div>`:"").join("")}</div>
+      <div style="font-size:11px">${S.spot.n} of your last ${S.spot.tot} misses${S.spot.why?` · mostly <b>${esc(S.spot.why)}</b>`:""}${S.spot.err!=null&&Math.abs(S.spot.err)>=4&&Math.abs(S.spot.err)<=40?` · ~${Math.abs(Math.round(S.spot.err))} ms ${S.spot.err>0?"late":"early"}`:""}</div></div>`,
+    table:()=>`<div class="sec"><div class="sech"><span class="lbl">your plays</span></div>${S.P.slice(-4).reverse().map(p=>{ const [gg,gcc]=GRADE(p);
+      return `<div class="row"><span class="gr" style="background:${gcc}">${gg}</span><span style="opacity:.7;font-size:11px">${ago(p.added)}</span><b>${(p.acc||0).toFixed(2)}%</b><span style="opacity:.8">${p.miss??"–"}✕</span></div>`; }).join("")}</div>`,
+    form:()=>mForm(st,cfg),
+    fc:()=>fcBlock(st,S,cfg,true),
+    strip:()=>`<div style="display:flex;align-items:center;gap:8px;white-space:nowrap"><span class="gr" style="background:${gc}">${g}</span><b>${best.acc.toFixed(2)}%</b><span style="opacity:.6">best</span><span class="chip">${S.last.miss??0}✕ last</span></div>`};
+  const on=(cfg.blocks||[]).filter(b=>b.on&&B[b.k]);
+  const body=on.map(b=>B[b.k]()).filter(Boolean);
+  if(!body.length) return "";
+  return hd+(cfg.lay==="row"?`<div style="display:flex;gap:8px">${body.map(h=>`<div style="flex:1;min-width:0">${h}</div>`).join("")}</div>`:body.join(""));
+}
+function mForm(st,cfg){
+  const R=(st.recent||[]).filter(p=>p.acc!=null&&p.added&&p.passed!==false); if(R.length<3) return "";
+  const now=Date.now()/1000; let i=R.length-1, ses=[];
+  if(now-R[i].added<7200){ ses=[R[i]]; while(i>0&&R[i].added-R[i-1].added<2700){ i--; ses.unshift(R[i]); } }
+  const avg=L=>L.reduce((x,p)=>x+p.acc,0)/L.length;
+  const cur=ses.length?ses:R.slice(-10), before=R.slice(0,R.length-cur.length).slice(-10);
+  const d=before.length?avg(cur)-avg(before):null;
+  const dur=m=>m<60?m+" min":Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m";
+  const bp=Math.max(0,...cur.map(p=>p.pp||0)); const L=R.slice(-24), mp=Math.max(1,...L.map(p=>p.pp||0));
+  const s0=ses.length?L.length-Math.min(L.length,ses.length):null;
+  return `<div class="sec"><div class="sech"><span class="lbl">${ses.length?"this session":"your form"}</span><span style="font-size:10px;opacity:.6">${ses.length?`${ses.length} play${ses.length===1?"":"s"} · ${dur(Math.max(1,Math.round((now-ses[0].added)/60)))}`:"last 10 plays"}</span></div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px"><span class="big" style="font-size:18px">${avg(cur).toFixed(2)}<small style="font-size:.6em;opacity:.7">%</small></span>
+      ${d!=null?`<span class="${d>=0?"up":"dn"}" style="font-weight:700;font-size:11px">${d>=0?"▲ +":"▼ –"}${Math.abs(d).toFixed(2)}</span>`:""}<span style="margin-left:auto;font-size:11px;opacity:.8">${bp?`best <b>${Math.round(bp)}pp</b>`:""}</span></div>
+    ${area(L.map(p=>p.acc),{col:cfg.ac,bars:L.map(p=>(p.pp||0)/mp),from:s0,minSpan:2,h:48})}
+    <div style="font-size:9.5px;opacity:.5;margin-top:3px">line = acc · bars = pp${ses.length?" · highlighted = this session":""}</div></div>`;
+}
+function head(cfg,right){ return cfg.hdr?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;white-space:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:${cfg.ac};flex:none"></span><b>${esc(cfg.tt)}</b><span class="mu" style="margin-left:auto;padding-left:8px">${esc(right)}</span></div>`:""; }
+
+function compactOnly(cfg){ return Object.assign({},cfg,{blocks:[{k:"strip",on:true}],hdr:false,wd:Math.max(cfg.wd,260)}); }
+
+function gameH(){ const r=STATE&&STATE.res; return (r&&r[1]>200)?r[1]:(screen.height||innerHeight); }
+function boxed(){ return MODE==="ingame"&&innerHeight<gameH()*0.8; }
+function place(ov,cfg,compact){
+  const W=innerWidth, H=innerHeight, s=H/768, Wu=W/s;
+  const sc=Math.min((MODE==="window"?1:s)*cfg.sz,(H-8)/Math.max(1,ov.offsetHeight));   // never taller than the screen
+  ov.style.transform=`scale(${sc})`;
+  if(MODE==="window"){ ov.style.transform="none"; const fit=Math.max(.6,Math.min(2.2,(innerWidth-20)/ov.offsetWidth))*cfg.sz;
+    ov.style.transform=`scale(${fit})`; ov.style.transformOrigin="top left"; ov.style.left=Math.max(0,(innerWidth-ov.offsetWidth*fit)/2)+"px"; ov.style.top="10px"; return; }
+  ov.style.transformOrigin="top left";
+  if(boxed()){ // tosu in-game box smaller than the game: draw at game scale in the box's top-left, the user places the box in tosu
+    // shrink to fit when tosu's box is smaller than the card, so nothing gets cut off
+    const gs=Math.min((gameH()/768)*cfg.sz,(innerHeight-2)/Math.max(1,ov.offsetHeight),(innerWidth-2)/Math.max(1,ov.offsetWidth));
+    ov.style.transform=`scale(${gs})`; ov.style.left="0px"; ov.style.top="0px"; return; }
+  const w=ov.offsetWidth*sc, h=ov.offsetHeight*sc;
+  let x,y;
+  const gapL=388, gapR=Wu-619, gap=gapR-gapL;
+  if(cfg.pos==="custom"){ x=W*cfg.px/100-w/2; y=H*cfg.py/100; }
+  else if(cfg.pos==="top"){ x=(W-w)/2; y=8*s; }
+  else if(compact){ x=8*s; y=88*s; }
+  else { x=(gapL+gap/2)*s-w/2; y=150*s; }
+  x=Math.max(0,Math.min(W-w,x)); y=Math.max(0,Math.min(H-h,y));
+  ov.style.left=x+"px"; ov.style.top=y+"px";
+}
+
+function render(){
+  const st=STATE, cfg=CFG; const ov=document.getElementById("ov");
+  if(!st||!cfg){ ov.classList.add("hidden"); return; }
+  const W=innerWidth, H=innerHeight, Wu=W/(H/768), gap=Wu-1007;
+  const visible=MODE==="preview"||MODE==="window"||!cfg.only_select||st.screen==="select";
+  const compact=MODE!=="window"&&!boxed()&&cfg.pos==="auto"&&gap<cfg.wd*cfg.sz-10;
+  const c=compact?compactOnly(cfg):cfg;
+  const modern=c.sty!=="classic";
+  const html=visible&&st.md5?(modern?buildModern(st,c):build(st,c)):"";
+  const key=html+"|"+JSON.stringify(cfg)+W+"x"+H;
+  if(key!==lastKey){
+    lastKey=key;
+    const [r,g,b]=hex2rgb(c.bg);
+    const up=c.ud==="g"?"#8fd14f":c.ud==="b"?"#5cc8ff":c.ac, dn=c.ud==="g"?"#ff6b8a":c.ud==="b"?"#ff9a3d":"#888";
+    Object.assign(ov.style,{width:(c.lay==="row"?Math.min(460,c.wd+(modern?150:100)):c.wd+(modern?40:0))+"px",background:modern?`linear-gradient(160deg,rgba(${r},${g},${b},${c.op}),rgba(${Math.max(0,r-6)},${Math.max(0,g-6)},${Math.max(0,b-4)},${c.op}))`:`rgba(${r},${g},${b},${c.op})`,color:c.tx,
+      border:`${c.bw}px solid ${modern?`color-mix(in srgb,${c.ac} 35%,transparent)`:c.ac+"99"}`,borderRadius:(modern?Math.max(c.rad,8)+4:c.rad)+"px",padding:"10px 12px",fontFamily:FONTS[c.ff]||FONTS.sans,
+      backdropFilter:c.glass?"blur(8px)":"none",boxShadow:modern?`0 10px 30px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.03) inset`:"none"});
+    ov.style.setProperty("--ac",c.ac); ov.style.setProperty("--tx",c.tx); ov.style.setProperty("--bg",`rgb(${r},${g},${b})`); ov.style.setProperty("--up",up); ov.style.setProperty("--dn",dn);
+    ov.className=(c.anim==="slide"?"slide ":"")+(modern?"m":"");
+    ov.style.transition=c.anim==="none"?"none":"";
+    if(html) ov.innerHTML=html;
+  }
+  ov.classList.toggle("hidden",!html);
+  if(html) place(ov,c,compact);
+  document.getElementById("msg").textContent=MODE==="window"&&!st.tosu?"waiting for tosu / osu! …":MODE==="window"&&!st.md5?"select a map in osu!":"";
+}
+
+async function poll(){
+  try{ const r=await fetch(API+"/api/overlay/state",{cache:"no-store"}); const d=await r.json();
+    if(MODE==="preview"){ STATE=d&&d.md5?d:DEMO; render(); return; }
+    STATE=d; CFG=d.cfg;
+    if(d.ovv){ if(window._ovv&&d.ovv!==window._ovv&&MODE!=="preview"){ setTimeout(()=>location.reload(),1500); } window._ovv=window._ovv||d.ovv; } }catch(e){ STATE=null; }
+  render();
+}
+if(MODE==="preview"){
+  STATE=DEMO;
+  // a sketch of osu!'s song select behind the preview (sizes in osu!'s 768-high units)
+  const bg=document.createElement("div"); bg.id="fake"; document.body.prepend(bg);
+  document.body.style.background="#2b2236";
+  const drawFake=()=>{ const s=innerHeight/768, u=v=>v*s+"px";
+    bg.innerHTML=`<div style="position:fixed;left:0;right:0;top:0;height:${u(70)};background:#0007"></div>
+      <div style="position:fixed;left:0;top:${u(150)};width:${u(388)};height:${u(500)};background:#0009"></div>
+      <div style="position:fixed;left:${u(8)};top:${u(112)};width:${u(300)};height:${u(28)};background:#ffffff22;border-radius:3px"></div>
+      ${[0,1,2,3,4,5].map(i=>`<div style="position:fixed;right:0;top:${u(90+i*95)};width:${u(i===2?619:534)};height:${u(i===2?100:84)};background:${i===2?"#5a4d6e":"#7a4a2ecc"};border-radius:${u(10)} 0 0 ${u(10)}"></div>`).join("")}
+      <div style="position:fixed;left:0;right:0;bottom:0;height:${u(90)};background:#0008"></div>`; };
+  drawFake(); addEventListener("resize",drawFake);
+  addEventListener("message",e=>{ if(e.data&&e.data.osrOverlay){ CFG=e.data.osrOverlay; lastKey=""; render(); } });
+  try{ parent.postMessage({osrOverlayReady:1},"*"); }catch(_){}
+  if(Q.get("live")){ poll(); setInterval(poll,700); }
+} else { poll(); setInterval(poll,500); }
+addEventListener("resize",()=>{ lastKey=""; render(); });
+</script>
+</body>
+</html>
