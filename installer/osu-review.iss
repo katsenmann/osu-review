@@ -36,7 +36,12 @@ UninstallDisplayIcon={app}\web\icon.ico
 UninstallDisplayName=osu!review
 Compression=lzma2/max
 SolidCompression=yes
-WizardStyle=modern
+WizardStyle=modern dark
+; osu!review look: dark, one background over the whole wizard (logo sits bottom-left, next to the buttons).
+; Setup picks the size that best fits the screen scaling.
+WizardBackImageFile=art\wizard-back-596.png,art\wizard-back-994.png,art\wizard-back-1272.png,art\wizard-back-1630.png
+WizardImageFile=
+WizardSmallImageFile=
 CloseApplications=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible

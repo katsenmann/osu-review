@@ -30,6 +30,7 @@ $py = "$cache\python"
 if (-not (Test-Path "$py\Lib\site-packages\webview")) {
   if (Test-Path $py) { Remove-Item $py -Recurse -Force }
   Invoke-WebRequest https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip -OutFile "$cache\py.zip"
+  if ((Get-FileHash "$cache\py.zip" -Algorithm MD5).Hash -ne 'FE8EF205F2E9C3BA44D0CF9954E1ABD3') { throw "Python download does not match python.org's checksum" }
   Expand-Archive "$cache\py.zip" -DestinationPath $py -Force
   $pth = (Get-ChildItem "$py\python*._pth" | Select-Object -First 1).FullName
   (Get-Content $pth) -replace '^#\s*import site', 'import site' | Set-Content $pth
