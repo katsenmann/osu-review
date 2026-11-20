@@ -169,7 +169,83 @@ def watch_webview(win):
         log(f"crash watch failed: {e}")
 
 
+def mini_main():
+    """Small extra window with the song-select overlay (Settings -> Overlay -> mini window)."""
+    log(f"overlay window start (pid {os.getpid()})")
+    try:
+        import faulthandler
+        faulthandler.enable(open(os.path.join(data_dir(), "window.log"), "a", encoding="utf-8"))
+    except Exception:
+        pass
+    lock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        if os.name == "nt":
+            lock.setsockopt(socket.SOL_SOCKET, getattr(socket, "SO_EXCLUSIVEADDRUSE", 0), 1)
+        lock.bind(("127.0.0.1", LOCK_PORT + 1))
+        lock.listen(1)
+    except OSError as e:
+        log(f"overlay window: already open ({e})")
+        return 0
+    try:
+        return _mini_run()
+    except Exception as e:
+        import traceback
+        log("overlay window failed: " + traceback.format_exc())
+        return 1
+
+
+def _mini_run():
+    import webview
+    pos = {}
+    try:
+        pos = api("/api/overlay/winpos") or {}
+    except Exception:
+        pass
+    kw = {}
+    if pos.get("x") is not None and pos.get("y") is not None:
+        kw = {"x": int(pos["x"]), "y": int(pos["y"])}
+    win = webview.create_window("osu!review overlay", BASE + "/overlay?mode=window",
+                                width=int(pos.get("w") or 320), height=int(pos.get("h") or 300),
+                                min_size=(200, 100), background_color="#0e0b14", on_top="--top" in sys.argv, **kw)
+
+    # remember where the window was (values come with the events - no calls into the window from here)
+    geo = {"x": kw.get("x"), "y": kw.get("y"), "w": int(pos.get("w") or 320), "h": int(pos.get("h") or 300)}
+
+    def moved(x, y):
+        geo["x"], geo["y"] = x, y
+
+    def resized(w, h):
+        geo["w"], geo["h"] = w, h
+
+    try:
+        win.events.moved += moved
+        win.events.resized += resized
+    except Exception:
+        pass
+
+    def shown():
+        log("overlay window shown")
+        threading.Timer(1.5, lambda: on_ui(win, lambda: set_native_icon(win))).start()
+    win.events.shown += shown
+    store = os.path.join(data_dir(), "window-mini")
+    os.makedirs(store, exist_ok=True)
+    try:
+        webview.start(private_mode=False, storage_path=store)
+    except TypeError:
+        webview.start()
+    log("overlay window closed")
+    if geo["x"] is not None:
+        try:
+            api("/api/overlay/winpos", dict(geo), timeout=2)
+        except Exception:
+            pass
+    return 0
+
+
 def main():
+    if "--mini" in sys.argv:
+        set_windows_identity()
+        return mini_main()
     try:
         import faulthandler
         faulthandler.enable(open(os.path.join(data_dir(), "window.log"), "a", encoding="utf-8"))

@@ -17,6 +17,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol='Tls12';" ^
   "$u='https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip';" ^
   "Invoke-WebRequest $u -OutFile 'python-embed.zip';" ^
+  "if ((Get-FileHash 'python-embed.zip' -Algorithm MD5).Hash -ne 'FE8EF205F2E9C3BA44D0CF9954E1ABD3') { Remove-Item 'python-embed.zip'; throw 'download does not match python.org checksum' };" ^
   "Expand-Archive 'python-embed.zip' -DestinationPath 'python' -Force;" ^
   "Remove-Item 'python-embed.zip';" ^
   "Get-ChildItem 'python\*._pth' | ForEach-Object { Add-Content $_.FullName '..' }"
@@ -36,9 +37,11 @@ echo.
 set "TARGET=%~dp0Start.bat"
 set "ICON=%~dp0web\icon.ico"
 
+set "WORKDIR=%~dp0"
+rem paths go in through environment variables, so folder names with ' or other odd characters can't break the command
 powershell -NoProfile -Command ^
   "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Desktop')+'\osu!review.lnk');" ^
-  "$s.TargetPath='%TARGET%'; $s.WorkingDirectory='%~dp0'; $s.IconLocation='%ICON%'; $s.WindowStyle=7; $s.Save()"
+  "$s.TargetPath=$env:TARGET; $s.WorkingDirectory=$env:WORKDIR; $s.IconLocation=$env:ICON; $s.WindowStyle=7; $s.Save()"
 echo   Desktop shortcut "osu!review" created.
 echo.
 
@@ -48,7 +51,7 @@ choice /c yn /t 10 /d n /n /m "  Choice [y/n]: "
 if errorlevel 2 goto :noauto
 powershell -NoProfile -Command ^
   "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Startup')+'\osu!review.lnk');" ^
-  "$s.TargetPath='%TARGET%'; $s.WorkingDirectory='%~dp0'; $s.IconLocation='%ICON%'; $s.WindowStyle=7; $s.Save()"
+  "$s.TargetPath=$env:TARGET; $s.WorkingDirectory=$env:WORKDIR; $s.IconLocation=$env:ICON; $s.WindowStyle=7; $s.Save()"
 echo   Autostart set up.
 :noauto
 echo.

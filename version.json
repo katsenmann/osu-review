@@ -1,11 +1,15 @@
 {
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "changes": {
     "en": [
-      "Map on tablet: the replay's \"Tablet on this map\" view can now show the map itself – circles, sliders and approach circles, synced with the replay, right where they were on your tablet area. Toggle and opacity next to the title; follows the Hidden switch.",
-      "Failed plays (osu!stable): new setting \"Save failed plays automatically\" – when your health runs out, osu!review presses F2 on the game over screen so the replay gets saved and analysed. Needs tosu running; off by default.",
-      "tosu built in: osu!review now downloads tosu once and runs it quietly in the background – pp from osu!lazer's calculator live and the failed-play detection work without installing anything. Already running your own tosu? Then that one is used. Can be turned off in Settings → pp.",
-      "Fixed: the window could freeze when a new score brought it to the front (same kind of problem as the grey window in beta.3)."
+      "Song-select overlay: your local plays of the map you selected in osu! – best acc, pp if you FC (from tosu), your form and this session – right next to the song select. In-game via tosu, in OBS or as a small window. New Overlay tab with live preview, presets, colours, blocks and layout; modern style by default. Hides while you play and in the mod / beatmap menus.",
+      "Your osu! local scores (scores.db) now count in the overlay too, so plays from before osu!review show up.",
+      "osu!lazer: song and background of lazer-only maps are learned through tosu – the replay viewer has music and background without the map in osu!stable, and danser can render lazer-only maps.",
+      "Offline plays (not logged in, stable or lazer) now count as yours in all stats, marked \"offline\".",
+      "Studio: new preset \"Smooth 1080p60\" (strong motion blur), motion blur \"very smooth\", FPS up to 480 – with a guard against broken videos.",
+      "Security: other websites can no longer use or read osu!review's local server, your osu! API secret is stored encrypted and never shown, every download (updates, tosu, danser, Node, pp calculators, Python) is checked against its published checksum, and crafted maps/replays can't read other files or freeze the PC.",
+      "The osu! API key is clearly optional now – pp come from tosu / the pp calculator.",
+      "New dark setup design. Charts on the home screen no longer stretch with other window sizes."
     ]
   }
 }

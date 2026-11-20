@@ -40,6 +40,9 @@ from core.osuapi import OsuApi
 from core.tosu import TosuBridge
 from core.lazercalc import LazerCalc, build_job
 from core.tosu_manager import TosuManager
+from core import overlay as OV
+from core import secret as SECRET
+from core.lazermedia import LazerMedia, sniff_type
 from core.updater import Updater
 from core.tray import Tray
 
@@ -82,6 +85,7 @@ DEFAULTS = {
     "otd_hz_always": False,
     "auto_save_fail": False,   # osu!stable: press F2 on the game over screen so failed plays get a replay
     "tosu_auto": True,         # download tosu once and run it in the background (Windows)
+    "overlay": {},             # song-select overlay (see core/overlay.py for the keys)
     "tab_map": {"on": True, "op": 0.6},   # replay: draw the map on the tablet view
     "vol_music": 0.6,
     "vol_hits": 0.7,
@@ -92,6 +96,141 @@ DEFAULTS = {
     "ui_theme": {},          # client design (colours, glass, font, density, sidebar)
     "hud": {},               # HUD layout / style
 }
+
+
+def _clean_setting(k, v):
+    """Only accept a value of the right kind for each setting (a bad value can't break or misuse the app)."""
+    d = DEFAULTS[k]
+    try:
+        if isinstance(d, bool):
+            return True, bool(v)
+        if isinstance(d, (int, float)):
+            if v in ("", None):
+                return True, d
+            f = float(v)
+            if f != f or abs(f) > 1e7:                     # NaN / absurd
+                return False, None
+            return True, (int(f) if isinstance(d, int) and float(int(f)) == f else f)
+        if isinstance(d, dict):
+            ok = isinstance(v, dict) and len(json.dumps(v)) < 200_000
+            return ok, v
+        if isinstance(d, str):
+            if not isinstance(v, str) or len(v) > 2048 or "\x00" in v:
+                return False, None
+            v = v.strip()
+            if k == "tosu_url":                            # tosu always runs on this PC
+                if v and not re.fullmatch(r"https?://(127\.0\.0\.1|localhost|\[::1\])(:\d{1,5})?/?", v, re.I):
+                    return False, None
+                return True, v.rstrip("/") or DEFAULTS["tosu_url"]
+            if k == "rewind_exe" and v and os.name == "nt" and not v.lower().endswith(".exe"):
+                return False, None
+            if k == "popup" and v not in ("app", "browser", "off"):
+                return False, None
+            return True, v
+    except (TypeError, ValueError, OverflowError):
+        return False, None
+    return False, None
+
+
+def overlay_state():
+    """What the song-select overlay shows: osu!'s current screen + your local plays of that map."""
+    live = dict(getattr(S.tosu, "live", None) or {}) if getattr(S, "tosu", None) else {}
+    cfg = OV.merged(S.cfg.get("overlay"))
+    st = live.get("state")
+    out = {"cfg": cfg, "tosu": bool(getattr(S.tosu, "connected", False)), "state": st,
+           "screen": ("modsel" if getattr(S, "modsel", None) and S.modsel.open else "select") if st == 5 else "play" if st == 2 else "results" if st == 7 else "menu" if st is not None else "off",
+           "md5": live.get("md5"), "mods": live.get("mods") or "", "res": live.get("res"),
+           "map": {"title": live.get("title"), "artist": live.get("artist"), "version": live.get("version"),
+                   "length": live.get("length"), "stars": live.get("stars"), "maxc": live.get("maxc")},
+           "ppacc": live.get("ppacc") or {}, "plays": []}
+    if live.get("md5"):
+        try:
+            own = S.ovc.for_map(live["md5"])
+            osu = []
+            try:
+                osu = S.osc.for_map(S.cfg.get("stable_path"), live["md5"])
+            except Exception as e:
+                log(f"overlay scores.db: {e}")
+            out["plays"] = OV.combine(own, osu)
+        except Exception as e:
+            log(f"overlay: {e}")
+    out["ovv"] = _overlay_version()
+    try:
+        out["recent"] = S.ovc.recent(30)
+    except Exception:
+        out["recent"] = []
+    return out
+
+
+_OVV = {"t": 0, "v": 0}
+
+
+def _overlay_version():
+    """mtime of the overlay page; the page reloads itself when it changes. Keeps tosu's copy up to date too."""
+    now = time.time()
+    if now - _OVV["t"] > 5:
+        _OVV["t"] = now
+        try:
+            v = int(os.path.getmtime(os.path.join(HERE, "web", "overlay.html")))
+            if v != _OVV["v"]:
+                old = _OVV["v"]
+                _OVV["v"] = v
+                m = getattr(S, "tosu_mgr", None)
+                if old and m and OV.merged(S.cfg.get("overlay")).get("ingame"):
+                    OV.install_tosu_counter(m.dir, HERE)
+        except Exception:
+            pass
+    return _OVV["v"]
+
+
+def overlay_apply():
+    """Settings changed: start/stop the mini window and the counter in tosu's in-game overlay."""
+    cfg = OV.merged(S.cfg.get("overlay"))
+    try:
+        mini_window(cfg["window"], cfg["window_top"])
+    except Exception as e:
+        log(f"overlay window: {e}")
+    m = getattr(S, "tosu_mgr", None)
+    if not m or os.name != "nt":
+        return
+    try:
+        want = bool(cfg["ingame"])
+        if want:
+            OV.install_tosu_counter(m.dir, HERE)
+        else:
+            OV.remove_tosu_counter(m.dir)
+        if m.set_env("ENABLE_INGAME_OVERLAY", "true" if want else "false"):
+            log(f"overlay: tosu in-game overlay {'on' if want else 'off'} – restarting tosu")
+            if m.state == "running":
+                m.stop()
+                m.start_async()
+    except Exception as e:
+        log(f"overlay in-game: {e}")
+
+
+def mini_window(on, top=False):
+    p = getattr(S, "mini_proc", None)
+    running = p is not None and p.poll() is None
+    if on and not running:
+        py = S.shell._python() if getattr(S, "shell", None) else None
+        if not py:
+            log("overlay window: no window runtime available")
+            return
+        args = [py, os.path.join(HERE, "window.py"), "--mini"] + (["--top"] if top else [])
+        S.mini_proc = subprocess.Popen(args, cwd=HERE, creationflags=0x08000000 if os.name == "nt" else 0)
+        log("overlay window opened")
+    elif not on and running:
+        try:
+            p.terminate()
+        except Exception:
+            pass
+        S.mini_proc = None
+        log("overlay window closed")
+    elif on and running and getattr(S, "mini_top", None) != top:
+        mini_window(False)
+        mini_window(True, top)
+        return
+    S.mini_top = top
 
 
 def on_failed_play(info):
@@ -146,7 +285,11 @@ class State:
             self.cfg.update(json.load(open(CONFIG_FILE, encoding="utf-8")))
         except Exception:
             pass
+        enc = self.cfg.get("osu_client_secret") or ""
+        self.cfg["osu_client_secret"] = SECRET.unprotect(enc)
         self.autodetect()
+        if enc and not str(enc).startswith(SECRET.PREFIX):
+            self.save_cfg()                      # old plain-text secret -> encrypted from now on
         self.index = library.BeatmapIndex(os.path.join(DATA, "beatmap_index.json"))
         self.index.on_done.append(lambda: threading.Thread(target=retry_missing_maps, daemon=True).start())
         self.lock = threading.Lock()
@@ -180,7 +323,19 @@ class State:
             c["otd_path"] = tablet.default_settings_path()
 
     def save_cfg(self):
-        json.dump(self.cfg, open(CONFIG_FILE, "w", encoding="utf-8"), indent=2)
+        out = dict(self.cfg)
+        out["osu_client_secret"] = SECRET.protect(out.get("osu_client_secret") or "")
+        tmp = CONFIG_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2)
+        os.replace(tmp, CONFIG_FILE)
+
+    def public_cfg(self):
+        """Settings for the UI - without the real API secret."""
+        out = dict(self.cfg)
+        if out.get("osu_client_secret"):
+            out["osu_client_secret"] = SECRET.MASK
+        return out
 
 
 S = State()
@@ -204,6 +359,9 @@ def resolve_media(bm_path, meta=None, audio=None, bg=None):
         if has_b and not twin.get("bg"):
             twin["bg"] = None
         return twin
+    lz = getattr(S, "lzm", None) and S.lzm.lookup(library.md5_file(bm_path))
+    if lz:                                     # osu!lazer: files learned from tosu
+        return {"dir": lz["dir"], "audio": lz["audio"], "bg": lz["bg"], "twin": False, "lazer": True}
     return {"dir": own, "audio": None, "bg": bg if has_b else None, "twin": False}
 
 
@@ -213,8 +371,13 @@ _media_cache = {}
 def play_media(p):
     bm = p.get("beatmap") or {}
     if bm.get("media_dir") is not None:
-        return {"dir": bm["media_dir"], "audio": bm.get("audio") if bm.get("has_audio") else None,
-                "bg": bm.get("bg") if bm.get("has_bg") else None}
+        m = {"dir": bm["media_dir"], "audio": bm.get("audio") if bm.get("has_audio") else None,
+             "bg": bm.get("bg") if bm.get("has_bg") else None}
+        if not m["audio"]:                     # osu!lazer map: song/background learned from tosu later
+            lz = getattr(S, "lzm", None) and S.lzm.lookup((p.get("replay") or {}).get("beatmap_md5"))
+            if lz:
+                return {"dir": lz["dir"], "audio": lz["audio"], "bg": lz["bg"]}
+        return m
     pid = p["id"]
     if pid not in _media_cache:
         path = bm.get("path")
@@ -762,6 +925,61 @@ def safe_name(s):
     return re.sub(r"\s+", " ", s)[:150] or "replay"
 
 
+RENDER_SONGS = os.path.join(DATA, "render-songs")
+
+
+def clean_render_songs(days=30):
+    """Drops the little lazer map folders for danser that weren't used for a month."""
+    try:
+        for n in os.listdir(RENDER_SONGS):
+            d = os.path.join(RENDER_SONGS, n)
+            if n.startswith("osr-") and os.path.isdir(d) and time.time() - os.path.getmtime(d) > days * 86400:
+                shutil.rmtree(d, ignore_errors=True)
+    except OSError:
+        pass
+
+
+def _link_or_copy(src, dst):
+    if os.path.isfile(dst):
+        return
+    try:
+        os.link(src, dst)                       # same drive: no extra space used
+    except OSError:
+        shutil.copyfile(src, dst)
+
+
+def lazer_render_songs(p):
+    """osu!lazer has no Songs folder, danser needs one: builds a tiny one with just this map.
+
+    <data>/render-songs/osr-<md5>/ gets the .osu plus the song and background (from lazer's file store,
+    learned through tosu). Returns (songs_dir, note) or (None, None) when the map is in stable's Songs anyway."""
+    md5 = (p.get("replay") or {}).get("beatmap_md5") or ""
+    if not re.fullmatch(r"[0-9a-f]{32}", md5):
+        return None, None
+    if any(v == md5 for v in S.index.stable.values()):
+        return None, None                       # osu!stable has this map -> danser finds it there
+    src = map_file(p)
+    if not src:
+        return None, None
+    d = os.path.join(RENDER_SONGS, "osr-" + md5)
+    os.makedirs(d, exist_ok=True)
+    os.utime(d)
+    meta = read_header(src)
+    name = safe_name(f'{meta.get("Artist", "map")} - {meta.get("Title", md5)} ({meta.get("Creator", "")}) [{meta.get("Version", "")}]')[:150]
+    _link_or_copy(src, os.path.join(d, name + ".osu"))
+    lz = S.lzm.lookup(md5) if getattr(S, "lzm", None) else None
+    note = None
+    for key, want in (("audio", meta.get("AudioFilename")), ("bg", meta.get("bg"))):
+        want = os.path.basename(str(want or "").replace("\\", "/"))
+        if not want or os.path.isfile(os.path.join(d, want)):
+            continue
+        if lz and lz.get(key):
+            _link_or_copy(os.path.join(lz["dir"], lz[key]), os.path.join(d, want))
+        elif key == "audio":
+            note = "no_audio"                   # map was never selected in lazer while tosu ran
+    return RENDER_SONGS, note
+
+
 def start_render(pid, opts, only_cfg=False):
     p = load_play(pid)
     r, bm = p["replay"], p.get("beatmap") or {}
@@ -774,7 +992,7 @@ def start_render(pid, opts, only_cfg=False):
                      f'{r["accuracy"]:.2f}% {"".join(r["mods_str"])} {time.strftime("%Y%m%d-%H%M%S")}')
     cfg.update({
         "replay": os.path.join(REPLAYS, pid + ".osr"), "name": name, "out_dir": video_dir(),
-        "songs": S.cfg["songs_path"], "skins": S.cfg["skins_path"],
+        "songs": S.cfg["songs_path"], "skins": S.cfg["skins_path"], "nodbcheck": False,
         "skin": opts.get("skin", S.cfg.get("skin") or ""),
         "music": float(opts.get("music", S.cfg.get("vol_music", 0.6))),
         "hits": float(opts.get("hits", S.cfg.get("vol_hits", 0.7))),
@@ -787,6 +1005,11 @@ def start_render(pid, opts, only_cfg=False):
         "dz": opts.get("dz") if isinstance(opts.get("dz"), dict) else {},
         "danser_over": opts.get("danser_over") if isinstance(opts.get("danser_over"), dict) else {},
     })
+    lz_songs, lz_note = lazer_render_songs(p)
+    if lz_songs:
+        # osu!lazer-only map: danser reads it from our small folder. -nodbcheck keeps danser's
+        # database of your stable Songs folder intact (otherwise it would rescan everything next time).
+        cfg.update({"songs": lz_songs, "nodbcheck": True, "lazer_note": lz_note})
     objs = bm.get("objects") or []
     cfg["start_ms"] = max(0, (objs[0]["t"] if objs else 0) - 1500)
     if only_cfg:
@@ -795,6 +1018,8 @@ def start_render(pid, opts, only_cfg=False):
     S.save_cfg()
     job = {"id": pid + "-" + str(int(time.time())), "play": pid,
            "title": f'{bm.get("title", "?")} [{bm.get("version", "?")}]', "cfg": cfg}
+    if cfg.get("lazer_note") == "no_audio":
+        log("render: osu!lazer map without known song file - select it once in lazer while tosu runs, then render again")
     S.renderer.submit(job)
     return job["id"]
 
@@ -1108,6 +1333,9 @@ def summary(p):
         "id": p["id"], "source": p["source"], "added": p["added"],
         "title": bm.get("title"), "artist": bm.get("artist"), "version": bm.get("version"),
         "player": r["player"], "mods": r["mods_str"], "acc": r["accuracy"], "miss": r["nmiss"],
+        # played while logged out: osu! stable leaves the name empty, lazer writes "Guest"
+        "offline": p["source"] in ("stable", "lazer", "stable-export", "lazer-export")
+                   and (r.get("player") or "").strip().lower() in ("", "guest"),
         "combo": r["max_combo"], "passed": r.get("passed"), "lazer": r["is_lazer"],
         "ur": (a.get("stats") or {}).get("ur"), "has_bg": bm.get("has_bg"),
         "pp": _ppd(p).get("pp"), "stars": _ppd(p).get("stars"),
@@ -1170,6 +1398,18 @@ def save_play(p):
                 time.sleep(0.05)
 
 
+def _inside(folder, name):
+    """folder/name, but only if it really stays inside that folder (a map can't point at other files)."""
+    if not folder or not name:
+        return ""
+    base = os.path.realpath(folder)
+    fp = os.path.realpath(os.path.join(base, name))
+    try:
+        return fp if os.path.commonpath([base, fp]) == base else ""
+    except ValueError:                     # other drive
+        return ""
+
+
 def load_play(pid):
     fn = os.path.join(PLAYS, os.path.basename(pid) + ".json")
     for i in range(4):
@@ -1186,7 +1426,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-    def _send(self, code, body, ctype="application/json"):
+    def _send(self, code, body, ctype="application/json", cors=False):
         if isinstance(body, (dict, list)):
             body = json.dumps(body).encode()
         elif isinstance(body, str):
@@ -1195,22 +1435,76 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
-        self.end_headers()
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if ctype.startswith("text/html"):
+            # other websites can't embed the client in a frame (clickjacking); OBS / tosu load the overlay directly
+            self.send_header("Content-Security-Policy", "frame-ancestors 'self' http://127.0.0.1:* http://localhost:*")
+        if cors:     # the overlay page also runs inside tosu (other port) - only pages on this PC may read it
+            o = (self.headers.get("Origin") or "").strip()
+            if re.fullmatch(r"https?://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?", o, re.I):
+                self.send_header("Access-Control-Allow-Origin", o)
+                self.send_header("Vary", "Origin")
         try:
+            self.end_headers()
             self.wfile.write(body)
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass            # the window closed or reloaded while the answer was on its way
+
+    def _raw(self, body, ctype, headers=None):
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        for k, v in (headers or {}).items():
+            self.send_header(k, v)
+        try:
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass
+
+    # ---- only this PC's own pages may talk to the app ------------------------------------------
+    # Blocks other websites from using the local API behind your back (cross-site requests and
+    # DNS rebinding): the Host must be 127.0.0.1/localhost, and requests that come from another
+    # site may only read the overlay data (used by OBS and tosu's in-game overlay).
+    _OK_HOSTS = ("127.0.0.1", "localhost", "[::1]")
+    _PUBLIC = ("/overlay", "/api/overlay/state", "/favicon.ico")
+
+    def _blocked(self, path, write):
+        host = (self.headers.get("Host") or "").strip().lower()
+        hname = host.rsplit(":", 1)[0] if not host.startswith("[") else host.split("]")[0] + "]"
+        if host and hname not in self._OK_HOSTS:
+            self._send(403, {"error": "forbidden host"})
+            return True
+        origin = (self.headers.get("Origin") or "").strip().lower()
+        site = (self.headers.get("Sec-Fetch-Site") or "").strip().lower()
+        own = (not origin) or any(origin == f"http://{h}:{PORT}" for h in self._OK_HOSTS)
+        if own and site not in ("cross-site", "same-site"):
+            return False
+        if not write and (path in self._PUBLIC or path.startswith("/static/")):
+            return False
+        # localhost pages on other ports (tosu, OBS) count as "same-site" - they may read, never write
+        self._send(403, {"error": "forbidden origin"})
+        return True
 
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
         path = u.path
         q = urllib.parse.parse_qs(u.query)
+        if self._blocked(path, False):
+            return
         try:
             if path in ("/", "/index.html"):
                 return self._send(200, open(os.path.join(HERE, "web", "index.html"), "rb").read(), "text/html; charset=utf-8")
             if path.startswith("/static/"):
                 fp = os.path.join(HERE, "web", os.path.basename(path))
                 return self._send(200, open(fp, "rb").read(), mimetypes.guess_type(fp)[0] or "application/octet-stream")
+            if path == "/overlay":
+                return self._send(200, open(os.path.join(HERE, "web", "overlay.html"), "rb").read(), "text/html; charset=utf-8")
+            if path == "/api/overlay/winpos":
+                return self._send(200, S.cfg.get("overlay_win") or {})
+            if path == "/api/overlay/state":
+                return self._send(200, overlay_state(), cors=True)
             if path == "/api/plays":
                 items = []
                 for fn in os.listdir(PLAYS):
@@ -1247,7 +1541,7 @@ class Handler(BaseHTTPRequestHandler):
                     bmp = (p.get("beatmap") or {}).get("path")
                     if bmp and os.path.isfile(bmp):
                         m = _media_cache[p["id"]] = resolve_media(bmp)
-                fp = os.path.join(m["dir"] or "", m["audio"] or "")
+                fp = _inside(m["dir"], m["audio"])
                 if not (m["audio"] and os.path.isfile(fp)):
                     bmp = (p.get("beatmap") or {}).get("path") or ""
                     folder = os.path.dirname(bmp)
@@ -1261,7 +1555,7 @@ class Handler(BaseHTTPRequestHandler):
                                            ("audio", "has_audio", "media_dir", "bg", "has_bg")}})
                 if m["audio"] and os.path.isfile(fp):
                     ext = os.path.splitext(fp)[1].lower()
-                    ctype = {".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".wav": "audio/wav"}.get(ext, "application/octet-stream")
+                    ctype = {".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".wav": "audio/wav"}.get(ext) or sniff_type(fp) or "application/octet-stream"
                     return self._send(200, open(fp, "rb").read(), ctype)
                 return self._send(404, {"error": "no audio"})
             if path.startswith("/api/mapsnd/"):
@@ -1280,13 +1574,16 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/bg/"):
                 p = load_play(path.split("/")[3])
                 m = play_media(p)
-                fp = os.path.join(m["dir"] or "", m["bg"] or "")
+                fp = _inside(m["dir"], m["bg"])
                 if m["bg"] and os.path.isfile(fp):
-                    return self._send(200, open(fp, "rb").read(), mimetypes.guess_type(fp)[0] or "image/jpeg")
+                    return self._send(200, open(fp, "rb").read(), mimetypes.guess_type(fp)[0] or sniff_type(fp) or "image/jpeg")
                 return self._send(404, {"error": "no bg"})
             if path == "/api/events":
                 S.last_ui_ping = time.time()
-                since = int(q.get("since", ["0"])[0])
+                try:
+                    since = int(q.get("since", ["0"])[0])
+                except ValueError:
+                    since = 0
                 with S.lock:
                     ev = [{"id": i, "play": k} for i, k in S.events if i > since]
                     last = S.event_id
@@ -1314,16 +1611,9 @@ class Handler(BaseHTTPRequestHandler):
                     if not found:
                         return self._send(204, b"", "image/png")  # element not in skin -> fallback
                     fp, scale = found
-                    body = open(fp, "rb").read()
-                    self.send_response(200)
-                    self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/png")
-                    self.send_header("Content-Length", str(len(body)))
-                    self.send_header("X-Skin-Scale", str(scale))
-                    self.send_header("X-Skin-Frames", str(skins.skin_frames(S.cfg["skins_path"], name, "/".join(parts[2:]))))
-                    self.send_header("Cache-Control", "max-age=60")
-                    self.end_headers()
-                    self.wfile.write(body)
-                    return
+                    return self._raw(open(fp, "rb").read(), mimetypes.guess_type(fp)[0] or "image/png",
+                                     {"X-Skin-Scale": str(scale), "Cache-Control": "max-age=60",
+                                      "X-Skin-Frames": str(skins.skin_frames(S.cfg["skins_path"], name, "/".join(parts[2:])))})
                 return self._send(404, {"error": "not found"})
             if path == "/api/otd/live":
                 if q.get("watch", ["1"])[0] == "1":
@@ -1358,14 +1648,7 @@ class Handler(BaseHTTPRequestHandler):
                     S.rosu.ensure_async()
                     return self._send(404, {"error": "not installed", "state": S.rosu.state})
                 ctype = "text/javascript" if name.endswith(".js") else "application/wasm"
-                self.send_response(200)
-                body = open(S.rosu.path(name), "rb").read()
-                self.send_header("Content-Type", ctype)
-                self.send_header("Content-Length", str(len(body)))
-                self.send_header("Cache-Control", "max-age=3600")
-                self.end_headers()
-                self.wfile.write(body)
-                return
+                return self._raw(open(S.rosu.path(name), "rb").read(), ctype, {"Cache-Control": "max-age=3600"})
             if path == "/api/vendor/status":
                 S.rosu.ensure_async()
                 return self._send(200, {"state": S.rosu.state, "error": S.rosu.error})
@@ -1394,7 +1677,7 @@ class Handler(BaseHTTPRequestHandler):
                 S.paths_status["tosu"] = S.tosu.connected
                 S.paths_status["otd"] = bool(S.otd.status["connected"]) or bool(tablet.default_settings_path()) \
                     or (bool(S.cfg["otd_path"]) and os.path.isfile(S.cfg["otd_path"]))
-                return self._send(200, {"cfg": S.cfg, "paths": S.paths_status, "osu_offsets": osu_offsets(), "index": S.index.status, "index_secs": S.index.secs,
+                return self._send(200, {"cfg": S.public_cfg(), "paths": S.paths_status, "osu_offsets": osu_offsets(), "index": S.index.status, "index_secs": S.index.secs,
                                         "indexed": len(S.index.by_md5), "data_dir": DATA,
                                         "shell": S.shell.status(),
                                         "tosu_mgr": S.tosu_mgr.status() if getattr(S, "tosu_mgr", None) else None})
@@ -1407,7 +1690,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urllib.parse.urlparse(self.path).path
-        n = int(self.headers.get("Content-Length", 0))
+        if self._blocked(path, True):
+            return
+        try:
+            n = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            n = -1
+        if n < 0 or n > 64 * 1024 * 1024:                 # replays are a few MB - refuse absurd uploads
+            return self._send(413, {"error": "too large"})
         body = self.rfile.read(n) if n else b""
         try:
             if path == "/api/import":
@@ -1422,22 +1712,35 @@ class Handler(BaseHTTPRequestHandler):
                 pid = os.path.basename(path.split("/")[3])
                 o = json.loads(body or b"{}")
                 return self._send(200, {"ok": set_folder(pid, o.get("render"), o.get("analysis"))})
+            if path == "/api/overlay/winpos":
+                w = json.loads(body or b"{}")
+                S.cfg["overlay_win"] = {k: int(w[k]) for k in ("x", "y", "w", "h") if isinstance(w.get(k), (int, float))}
+                S.save_cfg()
+                return self._send(200, {"ok": True})
             if path == "/api/settings":
                 new = json.loads(body or b"{}")
+                if new.get("osu_client_secret") == SECRET.MASK:
+                    new.pop("osu_client_secret")         # unchanged - the UI only knows the mask
                 for k in DEFAULTS:
                     if k in new:
-                        S.cfg[k] = new[k]
+                        ok, v = _clean_setting(k, new[k])
+                        if ok:
+                            S.cfg[k] = v
+                        else:
+                            log(f"settings: ignored invalid value for {k}")
                 S.autodetect()
                 S.save_cfg()
                 S.otd.always = bool(S.cfg.get("otd_hz_always"))
                 S.osuapi.configure(S.cfg.get("osu_client_id"), S.cfg.get("osu_client_secret"))
                 S.tosu.set_url(S.cfg.get("tosu_url"))
+                if "overlay" in new:
+                    threading.Thread(target=overlay_apply, daemon=True).start()
                 if "tosu_auto" in new and getattr(S, "tosu_mgr", None):
                     if new["tosu_auto"] and S.tosu_mgr.state in ("off", "error"):
                         S.tosu_mgr.start_async()
                     elif not new["tosu_auto"] and S.tosu_mgr.state == "running":
                         threading.Thread(target=S.tosu_mgr.stop, daemon=True).start()
-                if set(new) - {"osu_client_id", "osu_client_secret", "tosu_url"} - {"skin", "viewer_fps", "viewer_interp", "tablet_w", "tablet_h", "otd_hz_always", "tab_map", "auto_save_fail", "tosu_auto",
+                if set(new) - {"osu_client_id", "osu_client_secret", "tosu_url"} - {"skin", "viewer_fps", "viewer_interp", "tablet_w", "tablet_h", "otd_hz_always", "tab_map", "auto_save_fail", "tosu_auto", "overlay",
                                    "vol_music", "vol_hits", "vol_mute", "audio_offset", "render", "video_dir", "hud", "ui_theme"}:
                     S.watchers_built = False
                 else:
@@ -1451,6 +1754,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": True})
             if path.startswith("/api/open/"):
                 _, _, _, pid, target = path.split("/")
+                pid = re.sub(r"[^0-9A-Za-z_-]", "", pid)
                 osr = os.path.join(REPLAYS, os.path.basename(pid) + ".osr")
                 if target == "osu":
                     if os.name == "nt":
@@ -1476,7 +1780,10 @@ class Handler(BaseHTTPRequestHandler):
                 pid = os.path.basename(path.split("/")[3])
                 with _save_lock:
                     p = load_play(pid)
-                    p["pp"] = json.loads(body or b"{}")
+                    pp = json.loads(body or b"{}")
+                    if not isinstance(pp, dict) or len(body) > 20000:
+                        return self._send(400, {"error": "bad pp"})
+                    p["pp"] = pp
                     save_play(p)
                 return self._send(200, {"ok": True})
             if path == "/api/clientlog/line":
@@ -1505,14 +1812,7 @@ class Handler(BaseHTTPRequestHandler):
                     out, start_ms = S.renderer.preview(start_render(pid, opts, only_cfg=True), float(opts.get("t") or 0))
                 except Exception as e:
                     return self._send(200, {"ok": False, "error": str(e)})
-                self.send_response(200)
-                data = open(out, "rb").read()
-                self.send_header("Content-Type", "video/mp4")
-                self.send_header("Content-Length", str(len(data)))
-                self.send_header("X-Start-Ms", str(start_ms))
-                self.end_headers()
-                self.wfile.write(data)
-                return
+                return self._raw(open(out, "rb").read(), "video/mp4", {"X-Start-Ms": str(start_ms)})
             if path.startswith("/api/render/start/"):
                 pid = os.path.basename(path.split("/")[4])
                 jid = start_render(pid, json.loads(body or b"{}"))
@@ -1573,7 +1873,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/osuapi/test":
                 d = json.loads(body or b"{}")
                 api_ = OsuApi()
-                api_.configure(d.get("id"), d.get("secret"))
+                api_.configure(d.get("id"), S.cfg.get("osu_client_secret") if d.get("secret") == SECRET.MASK else d.get("secret"))
                 try:
                     api_.test()
                     return self._send(200, {"ok": True})
@@ -1603,6 +1903,10 @@ class Handler(BaseHTTPRequestHandler):
                 quit_app()
                 return
             return self._send(404, {"error": "not found"})
+        except FileNotFoundError:
+            return self._send(404, {"error": "not found"})
+        except json.JSONDecodeError:
+            return self._send(400, {"error": "bad request"})
         except Exception as e:
             log(traceback.format_exc())
             return self._send(500, {"error": str(e)})
@@ -1653,6 +1957,10 @@ def quit_app():
     S.shell.quit = True
     if getattr(S, "tosu_mgr", None):
         threading.Thread(target=S.tosu_mgr.stop, daemon=True).start()
+    try:
+        mini_window(False)
+    except Exception:
+        pass
     if getattr(S, "tray", None):
         S.tray.remove()
     threading.Timer(1.2, lambda: os._exit(0)).start()
@@ -1673,6 +1981,10 @@ def restart_self():
     log("Python files changed – restarting …")
     if getattr(S, "tosu_mgr", None):
         S.tosu_mgr.stop()
+    try:
+        mini_window(False)
+    except Exception:
+        pass
     if getattr(S, "tray", None):
         S.tray.remove()
     args = [sys.executable, os.path.join(HERE, "app.py"), "--no-window", "--restarted"]
@@ -1754,10 +2066,34 @@ def main():
     S.shell = Shell(HERE, DATA, log)
     S.shell.fallback = lambda: open_ui(_no_shell=True)
     S.tosu = TosuBridge(DATA, log, S.cfg.get("tosu_url") or "http://127.0.0.1:24050")
+    S.lzm = LazerMedia(DATA, log)
+    threading.Thread(target=clean_render_songs, daemon=True).start()
+
+    def _on_map(live):
+        md5 = (live.get("md5") or "").lower()
+        mine = S.ovc.for_map(md5) if getattr(S, "ovc", None) else []
+        need = live.get("state") in (2, 7) or bool(mine)     # only maps you play(ed) may be fetched
+        before = S.lzm.lookup(md5)
+        S.lzm.note(live, S.cfg.get("lazer_path") or "", need=need, tosu_url=S.tosu.url)
+        if not before and S.lzm.lookup(md5):
+            for r in mine:                              # old replays of this map get music + background now
+                _media_cache.pop(r.get("id"), None)
+    S.tosu.on_map = _on_map
     S.tosu.on_fail = on_failed_play
     S.tosu_mgr = TosuManager(DATA, log)
+    if OV.merged(S.cfg.get("overlay")).get("ingame"):
+        S.tosu_mgr.env_extra["ENABLE_INGAME_OVERLAY"] = "true"
     if S.cfg.get("tosu_auto", True):
         S.tosu_mgr.start_async()
+    S.ovc = OV.PlayCache(PLAYS)
+    S.osc = OV.ScoresDb()
+    try:
+        from core.modsel import ModSelect
+        S.modsel = ModSelect(lambda: getattr(getattr(S, "tosu", None), "live", None), log).start()
+    except Exception as e:
+        log(f"modsel: {e}")
+    if any(OV.merged(S.cfg.get("overlay")).get(k) for k in ("window", "ingame")):
+        threading.Timer(4.0, overlay_apply).start()
     S.osuapi = OsuApi()
     S.osuapi.configure(S.cfg.get("osu_client_id"), S.cfg.get("osu_client_secret"))
     if S.cfg["popup"] == "app":

@@ -22,8 +22,10 @@ osu!review runs quietly in the background. As soon as you finish a score in **os
 - **Big view** – live panels next to the playfield: what's happening now, aim on your last jumps, cursor speed, your pen on the tablet, timing of the last hits and a key overlay.
 - **Streams & jumps** – stamina curve, timing drift, alternation, over/undershoot by distance and direction, corrections and your stream/jump limits.
 - **Tablet & area** – your OpenTabletDriver area live, report rate, and an overall rating of your area from all your replays.
-- **pp** – from the osu! API, tosu or osu!lazer's own calculator (current formulas).
-- **Studio** – render replays to video with danser-go, with a HUD (pp counter, key overlay), motion blur, up to 4K.
+- **Song-select overlay** – your local plays of the selected map right next to osu!'s song select: best acc, pp *if you FC*, your form and this session. In-game (via tosu), in OBS or as a small window, fully customisable – and out of the way while you play or open the mod/beatmap menus.
+- **pp** – from tosu or the pp calculator, live. An osu! API key is optional (only for the servers' official value).
+- **Studio** – render replays to video with danser-go, with a HUD (pp counter, key overlay), motion blur, up to 4K and 480 FPS.
+- **osu!lazer too** – lazer-only maps get their song and background in the replay viewer and can be rendered, offline plays (not logged in) count as yours.
 - **Your look** – themes, map backgrounds, colours, fonts, Ctrl+K command bar.
 
 <p align="center">
@@ -74,7 +76,7 @@ That's it. osu!review finds your osu! folders on its own. If it ever doesn't, se
 
 ## Data & privacy
 
-Everything stays on your PC: scores and settings live in `%APPDATA%\osu-review`, the app only listens on `127.0.0.1:47290`. Online it only checks GitHub for new versions and downloads the tools it needs (Node.js and the pp calculators, danser-go for videos) and, if you set it up, talks to the osu! API.
+Everything stays on your PC: scores and settings live in `%APPDATA%\osu-review`, the app only listens on `127.0.0.1:47290` and only answers its own window (other websites can't use it). Online it only checks GitHub for new versions and downloads the tools it needs (tosu, Node.js and the pp calculators, danser-go for videos) – every download is checked against its published checksum – and, if you set it up, talks to the osu! API. Your API secret is stored encrypted for your Windows account. No telemetry.
 
 ## Thanks to
 
