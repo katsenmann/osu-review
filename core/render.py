@@ -22,6 +22,7 @@ PRESETS = {
     "yt1080": {"w": 1920, "h": 1080, "fps": 60, "mb": 8},
     "yt1440": {"w": 2560, "h": 1440, "fps": 60, "mb": 8},
     "yt2160": {"w": 3840, "h": 2160, "fps": 60, "mb": 6},
+    "smooth1080": {"w": 1920, "h": 1080, "fps": 60, "mb": 24},
     "hfr1080": {"w": 1920, "h": 1080, "fps": 120, "mb": 0},
     "fast720": {"w": 1280, "h": 720, "fps": 60, "mb": 0},
 }
@@ -46,6 +47,16 @@ ENCODERS = {
 def _ua_get(url, timeout=30):
     req = urllib.request.Request(url, headers={"User-Agent": "osu-review", "Accept": "application/vnd.github+json"})
     return urllib.request.urlopen(req, timeout=timeout)
+
+
+def _locked_setting(keys):
+    """danser settings osu!review always controls itself: folders, encoder/ffmpeg options, output.
+    Studio's "all danser settings" can't change them, so a setting can never point danser/ffmpeg at
+    other folders or run extra ffmpeg options."""
+    low = [k.lower() for k in keys]
+    if low[0] in ("general", "recording"):
+        return not (low[0] == "recording" and len(low) >= 2 and low[1] in ("motionblur", "fps", "framewidth", "frameheight"))
+    return any(any(w in k for w in ("dir", "path", "ffmpeg", "options", "command", "exe")) for k in low)
 
 
 class Renderer:
@@ -92,6 +103,8 @@ class Renderer:
         if not pick:
             raise RuntimeError("No Windows build of danser in the latest release")
         url, total = pick["browser_download_url"], pick.get("size") or 0
+        if not url.startswith("https://github.com/"):
+            raise RuntimeError("unexpected download address")
         job["detail"] = f'{pick["name"]} ({total / 1e6:.0f} MB)'
         buf = io.BytesIO()
         with _ua_get(url, timeout=60) as r:
@@ -256,6 +269,11 @@ class Renderer:
         enc_key = cfg.get("encoder", "nvenc_h264")
         enc_name, enc_opts = ENCODERS.get(enc_key, ENCODERS["x264"])
         mb = int(cfg.get("mb", 0))
+        # danser warns that absurd internal frame rates break the video: keep FPS x oversampling <= 3840
+        fps = max(1, min(int(cfg.get("fps") or 60), 480))
+        cfg["fps"] = fps
+        if mb > 1:
+            mb = min(mb, max(0, 3840 // fps))
         rec = {"FrameWidth": cfg["w"], "FrameHeight": cfg["h"], "FPS": cfg["fps"], "Encoder": enc_name,
                "Container": "mp4", "OutputDir": cfg["out_dir"],
                "MotionBlur": {"Enabled": mb > 1, "OversampleMultiplier": max(2, mb),
@@ -301,7 +319,7 @@ class Renderer:
         for path, val in (cfg.get("danser_over") or {}).items():
             node = patch
             keys = [k for k in str(path).split(".") if k]
-            if not keys:
+            if not keys or _locked_setting(keys):
                 continue
             for k in keys[:-1]:
                 if not isinstance(node.get(k), dict):
@@ -331,6 +349,8 @@ class Renderer:
             start = max(0.0, t_ms / 1000 - 1.0)
             args = [exe, f'-replay={c["replay"]}', "-record", "-out=preview", "-noupdatecheck", "-quickstart",
                     f"-start={start:.3f}", f"-end={start + secs:.3f}", "-sPatch=" + json.dumps(self._patch(c))]
+            if c.get("nodbcheck"):
+                args.append("-nodbcheck")
             if c.get("skin"):
                 args.append(f'-skin={c["skin"]}')
             out = os.path.join(out_dir, "preview.mp4")
@@ -361,6 +381,8 @@ class Renderer:
         base_name = cfg["name"] + (" (base)" if cfg.get("hud") else "")
         args = [exe, f'-replay={cfg["replay"]}', "-record", f'-out={base_name}',
                 "-noupdatecheck", "-preciseprogress", "-sPatch=" + json.dumps(patch)]
+        if cfg.get("nodbcheck"):
+            args.append("-nodbcheck")
         if cfg.get("hud"):
             # known start time so the HUD frames line up: video frame 0 = map time start_ms
             args += ["-quickstart", f'-start={cfg["start_ms"] / 1000:.3f}']

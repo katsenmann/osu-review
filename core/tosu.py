@@ -26,11 +26,20 @@ class TosuBridge:
         self.session = None          # current play: {md5, curve: [[t, pp]], ...}
         self.records = []            # finished plays (results screen seen)
         self.on_fail = None          # callback(info) once per failed play (health ran out, osu!stable)
+        self.live = {}               # what osu! shows right now (state, selected map, mods) - for the overlay
+        self.on_map = None           # callback(live) when the selected map or screen changes
+        self._map_key = None
         try:
             self.records = json.load(open(self.file, encoding="utf-8"))[-40:]
         except Exception:
             self.records = []
         threading.Thread(target=self._loop, daemon=True).start()
+
+    def _call_on_map(self, live):
+        try:
+            self.on_map(live)
+        except Exception as e:
+            self.log(f"tosu on_map: {type(e).__name__}: {e}")
 
     def set_url(self, url):
         self.url = (url or "http://127.0.0.1:24050").rstrip("/")
@@ -61,12 +70,33 @@ class TosuBridge:
                 if was != "off" and self.connected:
                     self.log(f"tosu no longer reachable ({type(e).__name__})")
                 self.connected = False
+                self.live = {}
                 was = "off"
                 time.sleep(5)
 
     def _handle(self, st, d):
         bm = d.get("beatmap") or {}
         md5 = (bm.get("checksum") or "").lower()
+        try:
+            play = d.get("play") or {}
+            mods = ((play.get("mods") or {}).get("name")) or ""
+            res = (d.get("settings") or {}).get("resolution") or {}
+            self.live = {"state": st, "md5": md5, "mods": mods, "at": time.time(), "client": d.get("client"),
+                         "title": bm.get("title"), "artist": bm.get("artist"), "version": bm.get("version"),
+                         "length": ((bm.get("time") or {}).get("lastObject")) or ((bm.get("time") or {}).get("mp3Length")),
+                         "res": [res.get("width"), res.get("height"), res.get("fullscreen")],
+                         # pp if you FC at 90..100 % with the selected mods (tosu calculates this)
+                         "ppacc": ((d.get("performance") or {}).get("accuracy")) or {},
+                         "stars": (((bm.get("stats") or {}).get("stars")) or {}).get("total"),
+                         "maxc": ((bm.get("stats") or {}).get("maxCombo")),
+                         # where the map's files are (osu!lazer: inside its hashed file store)
+                         "folders": d.get("folders") or {}, "direct": d.get("directPath") or {}}
+            key = (md5, st)
+            if md5 and key != self._map_key and self.on_map:
+                self._map_key = key
+                threading.Thread(target=self._call_on_map, args=(dict(self.live),), daemon=True).start()
+        except Exception:
+            pass
         if st == PLAY:
             play = d.get("play") or {}
             t = float(((bm.get("time") or {}).get("live")) or 0)

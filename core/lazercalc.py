@@ -24,6 +24,8 @@ import time
 import urllib.request
 import zipfile
 
+from core.integrity import check_sha256, check_sri, from_shasums
+
 NODE_INDEX = "https://nodejs.org/dist/index.json"
 NPM_PKG = "https://registry.npmjs.org/@tosuapp%2Flazer-calculator-{plat}"
 CHECK_EVERY = 3 * 24 * 3600          # look for a newer calculator every 3 days
@@ -215,6 +217,7 @@ class LazerCalc:
         if self.plat.startswith("win"):
             url = f"https://nodejs.org/dist/{v}/node-{v}-win-x64.zip"
             blob = _get(url, timeout=600)
+            check_sha256(blob, from_shasums(_get(f"https://nodejs.org/dist/{v}/SHASUMS256.txt").decode(), f"node-{v}-win-x64.zip"))
             with zipfile.ZipFile(io.BytesIO(blob)) as z:
                 name = next(n for n in z.namelist() if n.endswith("/node.exe"))
                 data = z.read(name)
@@ -222,6 +225,7 @@ class LazerCalc:
         else:
             url = f"https://nodejs.org/dist/{v}/node-{v}-linux-x64.tar.xz"
             blob = _get(url, timeout=600)
+            check_sha256(blob, from_shasums(_get(f"https://nodejs.org/dist/{v}/SHASUMS256.txt").decode(), f"node-{v}-linux-x64.tar.xz"))
             with tarfile.open(fileobj=io.BytesIO(blob), mode="r:xz") as t:
                 m = next(m for m in t.getmembers() if m.name.endswith("/bin/node"))
                 data = t.extractfile(m).read()
@@ -248,6 +252,7 @@ class LazerCalc:
                 pkg = os.path.join(self.dir, "pkg")
                 if latest != self.meta.get("version") or not os.path.isfile(os.path.join(pkg, "binding.node")):
                     blob = _get(tarball, timeout=900)
+                    check_sri(blob, (info.get("dist") or {}).get("integrity"))
                     tmp = pkg + ".new"
                     shutil.rmtree(tmp, ignore_errors=True)
                     os.makedirs(tmp)

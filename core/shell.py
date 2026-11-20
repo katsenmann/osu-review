@@ -4,6 +4,7 @@ Windows: a private Python 3.12 (embeddable, ~11 MB) + pywebview in <data>/runtim
 own Python is not touched (pywebview's .NET bridge does not exist yet for very new Pythons).
 macOS / Linux: the current Python, pywebview is installed for the user if missing.
 """
+import hashlib
 import os
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ import urllib.request
 import zipfile
 
 PY_EMBED = "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip"
+PY_EMBED_MD5 = "fe8ef205f2e9c3ba44d0cf9954e1abd3"
 GET_PIP = "https://bootstrap.pypa.io/get-pip.py"
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
@@ -81,6 +83,9 @@ class Shell:
                     self.log("App window: downloading a private Python runtime (once, ~11 MB)")
                     z = os.path.join(self.rt, "py.zip")
                     urllib.request.urlretrieve(PY_EMBED, z)
+                    if hashlib.md5(open(z, "rb").read()).hexdigest() != PY_EMBED_MD5:   # python.org's published sum
+                        os.remove(z)
+                        raise RuntimeError("Python download doesn't match python.org's checksum")
                     shutil.rmtree(py_dir, ignore_errors=True)
                     with zipfile.ZipFile(z) as f:
                         f.extractall(py_dir)

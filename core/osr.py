@@ -72,6 +72,15 @@ def looks_like_osr(head: bytes) -> bool:
     return head[5] == 0x0B and head[6] == 32 and all(c in b"0123456789abcdef" for c in head[7:39])
 
 
+def _unlzma(data, limit=64 << 20):
+    """lzma with a size cap - a crafted replay can't unpack into gigabytes and freeze the PC."""
+    d = lzma.LZMADecompressor(format=lzma.FORMAT_ALONE)
+    out = d.decompress(data, max_length=limit)
+    if not d.eof and d.needs_input is False:
+        raise ValueError("replay data too large")
+    return out
+
+
 def parse_osr(data: bytes, with_frames=True):
     r = _Reader(data)
     rep = {}
@@ -111,7 +120,7 @@ def parse_osr(data: bytes, with_frames=True):
         try:
             m = r.int()
             if 0 < m < 10_000_000:
-                info = json.loads(lzma.decompress(r.raw(m), format=lzma.FORMAT_ALONE).decode("utf-8"))
+                info = json.loads(_unlzma(r.raw(m), 4 << 20).decode("utf-8"))
                 rep["lazer_info"] = {"mods": info.get("mods"), "statistics": info.get("statistics"),
                                      "maximum_statistics": info.get("maximum_statistics")}
         except Exception:
@@ -119,7 +128,7 @@ def parse_osr(data: bytes, with_frames=True):
     frames = []
     seed = None
     if with_frames and n > 0:
-        text = lzma.decompress(compressed, format=lzma.FORMAT_ALONE).decode("ascii", "replace")
+        text = _unlzma(compressed).decode("ascii", "replace")
         t = 0
         for part in text.split(","):
             if not part:

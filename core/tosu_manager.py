@@ -9,6 +9,7 @@ when you fail a map (auto-save of failed plays). With this the user doesn't have
     - if a tosu is already running (port 24050 answers), that one is used and ours stays off
 Windows only.
 """
+import hashlib
 import io
 import json
 import os
@@ -46,6 +47,7 @@ class TosuManager:
         self.error = None
         self.stopping = False
         self.lock = threading.Lock()
+        self.env_extra = {}         # e.g. ENABLE_INGAME_OVERLAY=true when the osu!review counter is used in-game
 
     # ---------------------------------------------------------------- info
     def meta(self):
@@ -93,6 +95,9 @@ class TosuManager:
             self.state = "downloading"
             self.log(f"tosu: downloading {asset['name']} ({asset.get('size', 0) // 1048576} MB) …")
             blob = _get(url, 600)
+            dg = asset.get("digest") or ""
+            if dg.startswith("sha256:") and hashlib.sha256(blob).hexdigest() != dg.split(":", 1)[1].lower():
+                raise RuntimeError("download doesn't match GitHub's checksum")
             was_running = self.proc and self.proc.poll() is None
             if was_running:
                 self.stop()
@@ -144,6 +149,7 @@ class TosuManager:
         except OSError:
             cur = ""
         want = {k: v for k, v in (l.split("=", 1) for l in ENV.splitlines() if "=" in l and not l.startswith("#"))}
+        want.update(self.env_extra)
         lines, seen = [], set()
         for l in cur.splitlines():
             k = l.split("=", 1)[0].strip()
@@ -153,13 +159,30 @@ class TosuManager:
             else:
                 lines.append(l)
         if not cur:
-            lines = ENV.strip().splitlines()
+            lines = [f"{k}={v}" for k, v in want.items()]
         else:
             lines += [f"{k}={v}" for k, v in want.items() if k not in seen]
         try:
             open(p, "w", encoding="utf-8").write("\n".join(lines) + "\n")
         except OSError:
             pass
+
+    def set_env(self, key, value):
+        """-> True if tosu has to restart for the change"""
+        old = self.env_extra.get(key)
+        self.env_extra[key] = value
+        if not self.exe():
+            return False
+        before = self._read_env().get(key)
+        self._write_env()
+        return before != value and old != value
+
+    def _read_env(self):
+        p = os.path.join(self.dir, "tosu.env")
+        try:
+            return dict(l.split("=", 1) for l in open(p, encoding="utf-8").read().splitlines() if "=" in l and not l.startswith("#"))
+        except OSError:
+            return {}
 
     # ---------------------------------------------------------------- run
     def start_async(self):

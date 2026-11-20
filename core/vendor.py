@@ -12,6 +12,8 @@ import threading
 import urllib.request
 import zipfile
 
+from core.integrity import check_sha256, check_sri
+
 GH = "https://api.github.com/repos/MaxOhn/rosu-pp-js/releases/latest"
 NPM = "https://registry.npmjs.org/rosu-pp-js/latest"
 
@@ -85,17 +87,21 @@ class RosuVendor:
                     for a in rel.get("assets", []):
                         n = a.get("name", "").lower()
                         if "web" in n and (n.endswith(".tgz") or n.endswith(".tar.gz") or n.endswith(".zip")):
-                            sources.append((f'github {rel.get("tag_name")} {a["name"]}', a["browser_download_url"], n))
+                            sources.append((f'github {rel.get("tag_name")} {a["name"]}', a["browser_download_url"], n, a.get("digest")))
                 except Exception as e:
                     tried.append(f"github: {e}")
                 try:
                     meta = json.loads(_get(NPM))
-                    sources.append((f'npm {meta.get("version")}', meta["dist"]["tarball"], "x.tgz"))
+                    sources.append((f'npm {meta.get("version")}', meta["dist"]["tarball"], "x.tgz", meta["dist"].get("integrity")))
                 except Exception as e:
                     tried.append(f"npm: {e}")
-                for label, url, name in sources:
+                for label, url, name, sumv in sources:
                     try:
                         blob = _get(url, timeout=120)
+                        if sumv and str(sumv).startswith("sha256:"):
+                            check_sha256(blob, str(sumv).split(":", 1)[1])
+                        else:
+                            check_sri(blob, sumv)
                         files = dict(_members(blob, name))
                         got = _pick_web_build(files)
                         if not got:

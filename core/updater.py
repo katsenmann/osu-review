@@ -5,6 +5,7 @@ apply():  downloads that release's ZIP, verifies it, backs up the current progra
           replaces them. app.py's own watcher then restarts the program. Scores and settings
           live in the data folder and are never touched.
 """
+import hashlib
 import io
 import json
 import os
@@ -69,9 +70,10 @@ class Updater:
         try:
             rel = json.loads(_get(API, limit=2 * 1024 * 1024).decode("utf-8"))
             tag = rel.get("tag_name") or ""
-            zips = [a.get("browser_download_url") for a in rel.get("assets") or []
-                    if (a.get("name") or "").lower().endswith(".zip")]
-            zips = [z for z in zips if z and z.startswith(DOWNLOAD_PREFIX)]
+            assets = [a for a in rel.get("assets") or [] if (a.get("name") or "").lower().endswith(".zip")
+                      and (a.get("browser_download_url") or "").startswith(DOWNLOAD_PREFIX)]
+            zips = [a["browser_download_url"] for a in assets]
+            st["digest"] = (assets[0].get("digest") or "") if assets else ""
             st.update(latest=tag.lstrip("vV"), notes=(rel.get("body") or "")[:4000], page=rel.get("html_url") or PAGE,
                       zip=zips[0] if zips else None, error=None,
                       available=bool(tag) and is_newer(tag, st["current"]))
@@ -85,6 +87,7 @@ class Updater:
         s["current"] = self.current()
         s["can_apply"] = bool(s["available"] and s["zip"])
         s.pop("zip", None)
+        s.pop("digest", None)
         return s
 
     def loop(self):
@@ -117,6 +120,9 @@ class Updater:
             st["progress"] = "Downloading …"
             raw = _get(st["zip"], timeout=120, limit=MAX_ZIP)
             st["progress"] = "Checking …"
+            dg = st.get("digest") or ""
+            if dg.startswith("sha256:") and hashlib.sha256(raw).hexdigest() != dg.split(":", 1)[1].lower():
+                return False, "The download doesn't match GitHub's checksum – not installed."
             files = self._read_zip(raw)
             ver = json.loads(files["version.json"].decode("utf-8")).get("version")
             if parse_version(ver) != parse_version(st["latest"]):
