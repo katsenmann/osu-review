@@ -933,7 +933,7 @@ def clean_render_songs(days=30):
     try:
         for n in os.listdir(RENDER_SONGS):
             d = os.path.join(RENDER_SONGS, n)
-            if n.startswith("osr-") and os.path.isdir(d) and time.time() - os.path.getmtime(d) > days * 86400:
+            if os.path.isdir(d) and time.time() - os.path.getmtime(d) > days * 86400:
                 shutil.rmtree(d, ignore_errors=True)
     except OSError:
         pass
@@ -969,15 +969,44 @@ def lazer_render_songs(p):
     _link_or_copy(src, os.path.join(d, name + ".osu"))
     lz = S.lzm.lookup(md5) if getattr(S, "lzm", None) else None
     note = None
-    for key, want in (("audio", meta.get("AudioFilename")), ("bg", meta.get("bg"))):
-        want = os.path.basename(str(want or "").replace("\\", "/"))
-        if not want or os.path.isfile(os.path.join(d, want)):
-            continue
-        if lz and lz.get(key):
-            _link_or_copy(os.path.join(lz["dir"], lz[key]), os.path.join(d, want))
-        elif key == "audio":
-            note = "no_audio"                   # map was never selected in lazer while tosu ran
+    # danser may already know this md5 from an older scan (another folder name) - it then looks
+    # there, so the same files go to every folder danser's database has for this map too.
+    targets = [(d, name + ".osu")] + _danser_db_places(md5)
+    for folder, osu_name in targets:
+        os.makedirs(folder, exist_ok=True)
+        _link_or_copy(src, os.path.join(folder, osu_name))
+        for key, want in (("audio", meta.get("AudioFilename")), ("bg", meta.get("bg"))):
+            want = os.path.basename(str(want or "").replace("\\", "/"))
+            if not want or os.path.isfile(os.path.join(folder, want)):
+                continue
+            if lz and lz.get(key):
+                _link_or_copy(os.path.join(lz["dir"], lz[key]), os.path.join(folder, want))
+            elif key == "audio":
+                note = "no_audio"               # map was never selected in lazer while tosu ran
     return RENDER_SONGS, note
+
+
+def _danser_db_places(md5):
+    """(folder, .osu name) inside render-songs for every entry danser's database has for this md5."""
+    db = os.path.join(S.renderer.dir, "danser.db") if getattr(S, "renderer", None) else ""
+    if not db or not os.path.isfile(db):
+        return []
+    out = []
+    try:
+        import sqlite3
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
+        try:
+            rows = con.execute("SELECT dir, file FROM beatmaps WHERE md5 = ?", (md5,)).fetchall()
+        finally:
+            con.close()
+        for dr, fn in rows:
+            dr, fn = str(dr or ""), os.path.basename(str(fn or ""))
+            folder = os.path.realpath(os.path.join(RENDER_SONGS, dr))
+            if fn.lower().endswith(".osu") and dr and os.path.commonpath([os.path.realpath(RENDER_SONGS), folder]) == os.path.realpath(RENDER_SONGS):
+                out.append((folder, fn))
+    except Exception as e:
+        log(f"render: danser database not readable ({e})")
+    return out
 
 
 def start_render(pid, opts, only_cfg=False):
